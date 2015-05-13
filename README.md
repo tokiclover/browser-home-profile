@@ -23,6 +23,21 @@ Using a fast compressor like lz4 would make saving/restoring tarballs lighting
 fast (e.g. ~230ms-54% average compression ratio-84.5MB total size for
 firefox (profile/cache) compression phase.)
 
+And maybe something like:
+
+	*/30 * * * * $USER $PREFIX/bin/browser-home-profile
+
+in a hourly cron job to keep track of changes might be necessary if the script
+is ued as a standalone binary.
+Alternatively, atd can be used to schedule profile/cache back up when need be.
+
+Or else, `ZSH` user may add a zsh-exit hook:
+
+	autoload -Uz add-zsh-hook; add-zsh-hook zshexit bhp
+
+after sourcing the file. Using my [fork](3) of [prezto](4) may be of interest
+for such users.
+
 ENVIRONMENT
 -----------
 
@@ -54,4 +69,6 @@ Distributed under the 2-clause/new/simplifed BSD License
 
 [1]:https://github.com/tokiclover/bar-overlay
 [2]:https://github.com/tokiclover/mkinitramfs-ll/tree/master/svc
+[3]: https://github.com/tokiclover/prezto
+[4]: https://github.com/sorin-ionescu/prezto
 
