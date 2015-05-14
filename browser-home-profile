@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # $Header: browser-home-profile                         Exp $
-# $Author: (c) 2015 -tclover <tokiclover@gmail.com>     Exp $
+# $Author: (c) 2012-015 -tclover <tokiclover@gmail.com> Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)        Exp $
 # $Version: 1.0 2014/05/05                              Exp $
 #
@@ -296,12 +296,13 @@ BHP_RET="${?}"
 
 bhp()
 {
-	local EXT OLD PROFILE
+	local EXT OLD PROFILE tarball
 	EXT=".tar.${BHP_COMPRESSOR%% *}" PROFILE="${BHP_PROFILE##*/}"
 
 	for dir in "${HOME}"/.${BHP_PROFILE} "${HOME}"/.cache/${BHP_PROFILE#config/}; do
 		[ -d "${dir}" ] || continue
 		OLD="${PWD}"
+
 		begin "Setting up tarball...\n"
 		cd "${dir%/*}" || continue
 		if [ -f ${PROFILE}/.unpacked ]; then
@@ -313,16 +314,14 @@ bhp()
 				${BHP_COMPRESSOR} ${PROFILE}${EXT} ||
 				{ end 1 Packing; continue; }
 		else
-			local decompress="${BHP_COMPRESSOR%% *}"
-
 			if [ -f ${PROFILE}${EXT} ]; then
-				local tarball=${PROFILE}${EXT}
+				tarball=${PROFILE}${EXT}
 			elif [ -f ${PROFILE}.old${EXT} ]; then
-				local tarball=${PROFILE}.old${EXT}
+				tarball=${PROFILE}.old${EXT}
 			else
 				warn "No tarball found."; continue
 			fi
-			${decompress} -cd ${tarball} | tar -xp &&
+			${BHP_COMPRESSOR%% *} -cd ${tarball} | tar -xp &&
 				touch ${PROFILE}/.unpacked ||
 				{ end 1 Unpacking; continue; }
 		fi
@@ -332,7 +331,7 @@ bhp()
 }
 
 case "${0##*/}" in
-	(bhp*|browser-home-profile*) [ ${BHP_RET} = 0 ] && bhp;;
+	(bhp|browser-home-profile) [ ${BHP_RET} = 0 ] && bhp;;
 esac
 
 #
