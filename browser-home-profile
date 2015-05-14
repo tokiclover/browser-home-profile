@@ -132,6 +132,7 @@ EOH
 mktmp()
 {
 	[ ${#} = 0 ] && { mktmp_help; return 1; }
+
 	local ARGS temp=-XXXXXX type
 	ARGS="$(getopt \
 		-o dfg:hm:o:p:: \
@@ -144,7 +145,7 @@ mktmp()
 	local group mode owner tmp
 	while true; do
 		case "${1}" in
-			(-p|--tmpd*) task=tmp tmpdir="${2:-$TMPDIR}"; shift;;
+			(-p|--tmpd*) tmpdir="${2:-${TMPDIR:-/tmp}}"; shift;;
 			(-h|--help) mktmp_help; return;;
 			(-m|--mode)  mode="${2}" ; shift;;
 			(-o|--owner) owner="${2}"; shift;;
@@ -155,7 +156,6 @@ mktmp()
 		esac
 		shift
 	done
-:	${tmpdir:=${tmpdir:-${TMPDIR:-/tmp}}}
 
 	if ! [ ${#} -eq 1 -a -n "${1}" ]; then
 		error "Invalid argument(s)"
@@ -173,8 +173,8 @@ mktmp()
 		tmp="${tmpdir}/${1%-*}-$(echo "${temp}" | cut -c-6)"
 	fi
 	case "${type}" in
-		(dir)  [ -d "${tmp}" ] || mkdir -p "${tmp}";;
-		(file) [ -e "${tmp}" ] || { mkdir -p "${tmp%/*}"; touch  "${tmp}"; };;
+		(dir) [ -d "${tmp}" ] || mkdir -p "${tmp}";;
+		(*)   [ -e "${tmp}" ] || { mkdir -p "${tmp%/*}"; touch  "${tmp}"; };;
 	esac
 	[ ${?} = 0 ] || { error "Failed to create ${tmp}"; return 5; }
 
