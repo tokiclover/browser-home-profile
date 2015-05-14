@@ -187,10 +187,11 @@ mktmp()
 bhp_help()
 {
 	cat <<-EOH
-usage: ${BHP_ZERO} [OPTIONS] [Browser-Home-Profile]
-  -b, --browser Web-Browser   Select a browser to set up
-  -c, --compressor 'lzop -1'  Use lzop compressor, default to lz4
-  -t, --tmpdir [DIR]          Set up a particular TMPDIR
+usage: ${BHP_ZERO} [OPTIONS] [BROWSER]
+  -b, --browser=Web-Browser   Select a browser to set up
+  -c, --compressor='lzop -1'  Use lzop compressor, default to lz4
+  -t, --tmpdir=DIR            Set up a particular TMPDIR
+  -p, --profile=PROFILE       Select a particular profile
   -h, --help                  Print help message and exit
 EOH
 }
@@ -221,8 +222,10 @@ bhp_browser()
 
 bhp_profile()
 {
-	BHP_PROFILE="${BHP_PROFILE}/$(sed -nre "s|^[Pp]ath=(.*$)|\1|p" \
-		${HOME}/.${BHP_PROFILE}/profiles.ini)"
+	[ -n "${2}" -a -d "${HOME}/.${1}/${2}" ] &&
+		{ BHP_PROFILE="${1}/${2}"; return; }
+	BHP_PROFILE="${1}/$(sed -nre "s|^[Pp]ath=(.*$)|\1|p" \
+		${HOME}/.${1}/profiles.ini)"
 	[ -n "${BHP_PROFILE}" -a -d "${HOME}/.${BHP_PROFILE}" ] ||
 		{ error "No firefox profile dir found"; return 113; }
 }
@@ -234,7 +237,7 @@ bhp_init()
 {
 	local ARGS DIR EXT OLD PROFILE browser dir char tmpdir
 	ARGS="$(getopt \
-		-o b:c:ht: -l browser:,compressor:,help,tmpdir: \
+		-o b:c:hp:t: -l browser:,compressor:,help,profile:,tmpdir: \
 		-n bhp -s sh -- "${@}")"
 	[ ${?} = 0 ] || return 111
 
@@ -243,6 +246,7 @@ bhp_init()
 			(-c|--compressor) BHP_COMPRESSOR="${2}";;
 			(-h|--help) bhp_help; return 128;;
 			(-b|--browser) browser="${2}";;
+			(-p|--profile) PROFILE="${2}";;
 			(-t|--tmpdir) tmpdir="${2}";;
 			(*) shift; break;;
 		esac
@@ -253,13 +257,13 @@ bhp_init()
 	[ -n "${BROWSER}" ] && export BROWSER || 
 		{ error "No browser found."; return 112; }
 	case "${BHP_PROFILE}" in
-		(mozilla*) bhp_profile;;
+		(mozilla*) bhp_profile "${BHP_PROFILE}" "${PROFILE}";;
 	esac
 
 :	${BHP_COMPRESSOR:=lz4 -1 -}
 :	${EXT=.tar.${BHP_COMPRESSOR%% *}}
 :	${tmpdir:=${TMPDIR:-/tmp/$USER}}
-:	${PROFILE=${BHP_PROFILE##*/}}
+:	${PROFILE:=${BHP_PROFILE##*/}}
 
 	[ -d "${TMPDIR}" ] || mkdir -p -m 1700 "${TMPDIR}" ||
 		{ error "No suitable directory found"; return 2; }
