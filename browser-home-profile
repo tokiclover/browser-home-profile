@@ -242,6 +242,7 @@ bhp_init()
 		-o b:c:hp:t: -l browser:,compressor:,help,profile:,tmpdir: \
 		-n bhp -s sh -- "${@}")"
 	[ ${?} = 0 ] || return 111
+	eval set -- ${ARGS}
 
 	while true; do
 		case "${1}" in
