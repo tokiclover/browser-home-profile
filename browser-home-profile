@@ -10,7 +10,6 @@ if [ -n "${ZSH_VERSION}" ]; then
 	emulate sh
 	setopt SH_WORD_SPLIT
 	setopt EXTENDED_GLOB NULL_GLOB
-	disable -r end
 elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs nullglob
 	shopt -qs extglob
@@ -26,10 +25,10 @@ esac
 #
 # @FUNCTION: Print error message to stderr
 #
-error()
+pr_error()
 {
 	local PFX=${name:+" ${CLR_MAG}${name}:${CLR_RST}"}
-	echo -e${EOL:+n} "${EOL:+\n} ${CLR_RED}*${CLR_RST}${PFX} ${@}" >&2
+	echo -e${PR_EOL:+n} "${PR_EOL:+\n} ${CLR_RED}*${CLR_RST}${PFX} ${@}" >&2
 }
 
 #
@@ -37,34 +36,36 @@ error()
 #
 die()
 {
-	local ret=${?}; error "${@}"; exit ${ret}
+	local ret=${?}; pr_error "${@}"; exit ${ret}
 }
 
 #
 # @FUNCTION: Print info message to stdout
 #
-info()
+pr_info()
 {
 	local PFX=${name:+" ${CLR_YLW}${name}:${CLR_RST}"}
-	echo -e${EOL:+n} "${EOL:+\n} ${CLR_BLU}*${CLR_RST}${PFX} ${@}"
+	echo -e${PR_EOL:+n} "${PR_EOL:+\n} ${CLR_BLU}*${CLR_RST}${PFX} ${@}"
 }
 
 #
 # @FUNCTION: Print warn message to stdout
 #
-warn()
+pr_warn()
 {
 	local PFX=${name:+" ${CLR_RED}${name}:${CLR_RST}"}
-	echo -e${EOL:+n} "${EOL:+\n} ${CLR_YLW}*${CLR_RST}${PFX} ${@}"
+	echo -e${PR_EOL:+n} "${PR_EOL:+\n} ${CLR_YLW}*${CLR_RST}${PFX} ${@}"
 }
 
 #
 # @FUNCTION: Print begin message to stdout
 #
-begin()
+pr_begin()
 {
-	[ -n "${EOL}" ] && echo
-:	${EOL=0}
+	case "${PR_EOL}" in
+		(0) echo;;
+	esac
+:	${PR_EOL=0}
 	local PFX=${name:+"${CLR_MAG}[${CLR_RST} ${CLR_BLU}${name}${CLR_RST}: ${CLR_MAG}]${CLR_RST}"}
 	echo -en " ${PFX} ${@}"
 }
@@ -72,7 +73,7 @@ begin()
 #
 # @FUNCTION: Print end message to stdout
 #
-end()
+pr_end()
 {
 	local suffix
 	case "${1-0}" in
@@ -81,7 +82,7 @@ end()
 	esac
 	shift
 	echo -en " ${@} ${suffix}\n"
-	EOL=
+	PR_EOL=
 }
 
 #
@@ -158,12 +159,12 @@ mktmp()
 	done
 
 	if ! [ ${#} -eq 1 -a -n "${1}" ]; then
-		error "Invalid argument(s)"
+		pr_error "Invalid argument(s)"
 		return 3
 	fi
 	case "${1}" in
 		(*${temp}) ;;
-		(*) error "Invalid TEMPLATE"; return 4;;
+		(*) pr_error "Invalid TEMPLATE"; return 4;;
 	esac
 
 	if type -p mktemp >${NULL} 2>&1; then
@@ -176,7 +177,7 @@ mktmp()
 		(dir) [ -d "${tmp}" ] || mkdir -p "${tmp}";;
 		(*)   [ -e "${tmp}" ] || { mkdir -p "${tmp%/*}"; touch  "${tmp}"; };;
 	esac
-	[ ${?} = 0 ] || { error "Failed to create ${tmp}"; return 5; }
+	[ ${?} = 0 ] || { pr_error "Failed to create ${tmp}"; return 5; }
 
 	[ -h "${tmp}" ] && return
 	[ "${owner}" ] && chown "${owner}" "${tmp}"
@@ -227,7 +228,7 @@ bhp_profile()
 	BHP_PROFILE="${1}/$(sed -nre "s|^[Pp]ath=(.*$)|\1|p" \
 		${HOME}/.${1}/profiles.ini)"
 	[ -n "${BHP_PROFILE}" -a -d "${HOME}/.${BHP_PROFILE}" ] ||
-		{ error "No firefox profile dir found"; return 113; }
+		{ pr_error "No firefox profile dir found"; return 113; }
 }
 
 #
@@ -255,7 +256,7 @@ bhp_init()
 
 	bhp_browser "${browser:-${1:-$BROWSER}}"
 	[ -n "${BROWSER}" ] && export BROWSER || 
-		{ error "No browser found."; return 112; }
+		{ pr_error "No browser found."; return 112; }
 	case "${BHP_PROFILE}" in
 		(mozilla*) bhp_profile "${BHP_PROFILE}" "${PROFILE}";;
 	esac
@@ -266,18 +267,18 @@ bhp_init()
 :	${PROFILE:=${BHP_PROFILE##*/}}
 
 	[ -d "${TMPDIR}" ] || mkdir -p -m 1700 "${TMPDIR}" ||
-		{ error "No suitable directory found"; return 2; }
+		{ pr_error "No suitable directory found"; return 2; }
 
 	for dir in "${HOME}"/.${BHP_PROFILE} "${HOME}"/.cache/${BHP_PROFILE#config/}; do
 		[ -d "${dir}" ] || continue
 		grep -q "${dir}" /proc/mounts && continue
 		OLD="${PWD}"
 
-		begin "Setting up directory...\n"
-		cd "${dir%/*}" || { end 1 Directory; continue; }
+		pr_begin "Setting up directory...\n"
+		cd "${dir%/*}" || { pr_end 1 Directory; continue; }
 		if [ ! -f "${PROFILE}${EXT}" ] || [ ! -f "${PROFILE}.old${EXT}" ]; then
 			tar -Ocp ${PROFILE} | ${BHP_COMPRESSOR} ${PROFILE}${EXT} ||
-				{ end 1 Tarball; continue; }
+				{ pr_end 1 Tarball; continue; }
 		fi
 		cd "${OLD}"
 
@@ -287,8 +288,8 @@ bhp_init()
 		esac
 		DIR="$(mktmp -p "${tmpdir}" -d bh${char}-XXXXXX)"
 		sudo mount --bind "${DIR}" "${dir}" 2>${NULL} ||
-			{ end 1 Mounting; continue; }
-		end "${?}"
+			{ pr_end 1 Mounting; continue; }
+		pr_end "${?}"
 	done
 }
 bhp_init "${@}"
@@ -303,29 +304,29 @@ bhp()
 		[ -d "${dir}" ] || continue
 		OLD="${PWD}"
 
-		begin "Setting up tarball...\n"
+		pr_begin "Setting up tarball...\n"
 		cd "${dir%/*}" || continue
 		if [ -f ${PROFILE}/.unpacked ]; then
 			if [ -f ${PROFILE}${EXT} ]; then
 				mv -f ${PROFILE}${EXT} ${PROFILE}.old${EXT} ||
-					{ end 1 Moving; continue; }
+					{ pr_end 1 Moving; continue; }
 			fi
 			tar -X ${PROFILE}/.unpacked -Ocp ${PROFILE} | \
 				${BHP_COMPRESSOR} ${PROFILE}${EXT} ||
-				{ end 1 Packing; continue; }
+				{ pr_end 1 Packing; continue; }
 		else
 			if [ -f ${PROFILE}${EXT} ]; then
 				tarball=${PROFILE}${EXT}
 			elif [ -f ${PROFILE}.old${EXT} ]; then
 				tarball=${PROFILE}.old${EXT}
 			else
-				warn "No tarball found."; continue
+				pr_warn "No tarball found."; continue
 			fi
 			${BHP_COMPRESSOR%% *} -cd ${tarball} | tar -xp &&
 				touch ${PROFILE}/.unpacked ||
-				{ end 1 Unpacking; continue; }
+				{ pr_end 1 Unpacking; continue; }
 		fi
-		end "${?}"
+		pr_end "${?}"
 		cd "${OLD}"
 	done
 }
