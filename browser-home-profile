@@ -136,8 +136,8 @@ mktmp()
 
 	local ARGS name=mktmp
 	ARGS="$(getopt \
-		-o dfg:hm:o:p:: \
-		-l dir,file,group:,tmpdir::	-l help,mode:owner: \
+		-o dfg:hm:o:p: \
+		-l dir,file,group:,tmpdir:,help,mode:owner: \
 		-s sh -n mktmp -- "${@}")"
 	[ ${?} = 0 ] || { mktmp_help; return 2; }
 	eval set -- ${ARGS}
@@ -183,6 +183,7 @@ mktmp()
 	[ "${owner}" ] && chown "${owner}" "${tmp}"
 	[ "${group}" ] && chgrp "${group}" "${tmp}"
 	[ "${mode}"  ] && chmod "${mode}"  "${tmp}"
+	echo "${tmp}"
 }
 
 bhp_help()
