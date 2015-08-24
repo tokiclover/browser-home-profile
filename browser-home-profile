@@ -8,6 +8,7 @@
 
 if [ -n "${ZSH_VERSION}" ]; then
 	emulate sh
+	NULLCMD=:
 	setopt SH_WORD_SPLIT
 	setopt EXTENDED_GLOB NULL_GLOB
 elif [ -n "${BASH_VERSION}" ]; then
@@ -207,12 +208,12 @@ bhp_browser()
 {
 	local BROWSERS MOZ_BROWSERS set brs dir
 	MOZ_BROWSERS='aurora firefox icecat seamonkey'
-	BROWSERS='conkeror chrom epiphany midory opera otter qupzilla vivaldi'
+	BROWSERS='conkeror chrom epiphany midory opera otter qupzilla netsurf vivaldi'
 
 	case "${1}" in
 		(*aurora|firefox*|icecat|seamonkey)
 			BROWSER="${1}" BHP_PROFILE="mozilla/${1}"; return;;
-		(conkeror*|*chrom*|epiphany|midory|opera*|otter*|qupzilla|vivaldi*)
+		(conkeror*|*chrom*|epiphany|midory|opera*|otter*|qupzilla|netsurf*|vivaldi*)
 			BROWSER="${1}" BHP_PROFILE="config/${1}" ; return;;
 	esac
 
