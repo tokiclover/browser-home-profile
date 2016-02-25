@@ -388,7 +388,7 @@ sub bhp_archive {
 				return 1;
 			}
 		}
-		unless(system("tar -X $profile/.unpacked -ocp $profile | " . join(' ', @{$bhp{compressor}}) . " $profile$ext")) {
+		if(system("tar -X $profile/.unpacked -ocp $profile | " . join(' ', @{$bhp{compressor}}) . " $profile$ext")) {
 			pr_end(1, "Packing");
 			return 2;
 		}
