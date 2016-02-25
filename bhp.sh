@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-# $Header: browser-home-profile                         Exp $
-# $Author: (c) 2012-015 -tclover <tokiclover@gmail.com> Exp $
-# $License: MIT (or 2-clause/new/simplified BSD)        Exp $
-# $Version: 1.0 2014/05/24                              Exp $
+# $Header: bhp.sh                                              Exp $
+# $Author: (c) 2012-2016 tokiclover <tokiclover@gmail.com>     Exp $
+# $License: MIT (or 2-clause/new/simplified BSD)               Exp $
+# $Version: 1.0 2016/02/24                                     Exp $
 #
 
 if [ -n "${ZSH_VERSION}" ]; then
@@ -28,7 +28,7 @@ esac
 pr_error()
 {
 	local PFX=${name:+" ${CLR_MAG}${name}:${CLR_RST}"}
-	echo -e${PR_EOL:+n} "${PR_EOL:+\n} ${CLR_RED}*${CLR_RST}${PFX} ${@}" >&2
+	echo -e "${PR_EOL} ${CLR_RED}*${CLR_RST}${PFX} ${@}" >&2
 }
 
 #
@@ -45,7 +45,7 @@ die()
 pr_info()
 {
 	local PFX=${name:+" ${CLR_YLW}${name}:${CLR_RST}"}
-	echo -e${PR_EOL:+n} "${PR_EOL:+\n} ${CLR_BLU}*${CLR_RST}${PFX} ${@}"
+	echo -e "${PR_EOL} ${CLR_BLU}*${CLR_RST}${PFX} ${@}"
 }
 
 #
@@ -54,7 +54,7 @@ pr_info()
 pr_warn()
 {
 	local PFX=${name:+" ${CLR_RED}${name}:${CLR_RST}"}
-	echo -e${PR_EOL:+n} "${PR_EOL:+\n} ${CLR_YLW}*${CLR_RST}${PFX} ${@}"
+	echo -e "${PR_EOL} ${CLR_YLW}*${CLR_RST}${PFX} ${@}"
 }
 
 #
@@ -62,10 +62,8 @@ pr_warn()
 #
 pr_begin()
 {
-	case "${PR_EOL}" in
-		(0) echo;;
-	esac
-:	${PR_EOL=0}
+	echo -en "${PR_EOL}"
+	PR_EOL="\n"
 	local PFX=${name:+"${CLR_MAG}[${CLR_RST} ${CLR_BLU}${name}${CLR_RST}: ${CLR_MAG}]${CLR_RST}"}
 	echo -en " ${PFX} ${@}"
 }
@@ -117,7 +115,7 @@ if [ -t 1 ] && yesno "${COLOR:-Yes}"; then
 	eval_colors
 fi
 
-mktmp_help()
+mktmp_message_help()
 {
 	cat <<-EOH
 usage: mktmp [-p] [-d|-f] [-m mode] [-o owner[:group] TEMPLATE-XXXXXX
@@ -133,14 +131,14 @@ EOH
 
 mktmp()
 {
-	[ ${#} = 0 ] && { mktmp_help; return 1; }
+	[ ${#} = 0 ] && { mktmp_message_help; return 1; }
 
 	local ARGS name=mktmp
 	ARGS="$(getopt \
 		-o dfg:hm:o:p: \
 		-l dir,file,group:,tmpdir:,help,mode:owner: \
 		-s sh -n mktmp -- "${@}")"
-	[ ${?} = 0 ] || { mktmp_help; return 2; }
+	[ ${?} = 0 ] || { mktmp_message_help; return 2; }
 	eval set -- ${ARGS}
 	ARGS=
 
@@ -148,7 +146,7 @@ mktmp()
 	while true; do
 		case "${1}" in
 			(-p|--tmpd*) tmpdir="${2:-${TMPDIR:-/tmp}}"; shift;;
-			(-h|--help) mktmp_help; return;;
+			(-h|--help) mktmp_message_help; return;;
 			(-m|--mode)  mode="${2}" ; shift;;
 			(-o|--owner) owner="${2}"; shift;;
 			(-g|--group) group="${2}"; shift;;
@@ -192,7 +190,7 @@ mktmp()
 	echo "${tmp}"
 }
 
-bhp_help()
+bhp_message_help()
 {
 	cat <<-EOH
 usage: ${BHP_ZERO} [OPTIONS] [BROWSER]
@@ -204,7 +202,7 @@ usage: ${BHP_ZERO} [OPTIONS] [BROWSER]
 EOH
 }
 
-bhp_browser()
+bhp_find_browser()
 {
 	local BROWSERS MOZ_BROWSERS set brs dir
 	MOZ_BROWSERS='aurora firefox icecat seamonkey'
@@ -228,7 +226,7 @@ bhp_browser()
 	return 1
 }
 
-bhp_profile()
+bhp_mozilla_profile()
 {
 	[ -n "${2}" -a -d "${HOME}/.${1}/${2}" ] &&
 		{ BHP_PROFILE="${1}/${2}"; return; }
@@ -242,7 +240,7 @@ bhp_profile()
 #
 # Use a private initializer function
 #
-bhp_init()
+bhp_init_profile()
 {
 	local ARGS DIR EXT OLD PROFILE browser dir char name="${BHP_ZERO}" tmpdir
 	ARGS="$(getopt \
@@ -254,7 +252,7 @@ bhp_init()
 	while true; do
 		case "${1}" in
 			(-c|--compressor) BHP_COMPRESSOR="${2}";;
-			(-h|--help) bhp_help; return 128;;
+			(-h|--help) bhp_message_help; return 128;;
 			(-b|--browser) browser="${2}";;
 			(-p|--profile) PROFILE="${2}";;
 			(-t|--tmpdir) tmpdir="${2}";;
@@ -263,11 +261,11 @@ bhp_init()
 		shift 2
 	done
 
-	bhp_browser "${browser:-${1:-$BROWSER}}"
+	bhp_find_browser "${browser:-${1:-$BROWSER}}"
 	[ -n "${BROWSER}" ] && export BROWSER || 
 		{ pr_error "No browser found."; return 112; }
 	case "${BHP_PROFILE}" in
-		(mozilla*) bhp_profile "${BHP_PROFILE}" "${PROFILE}";;
+		(mozilla*) bhp_mozilla_profile "${BHP_PROFILE}" "${PROFILE}";;
 	esac
 
 :	${BHP_COMPRESSOR:=lz4 -1 -}
@@ -301,9 +299,12 @@ bhp_init()
 		pr_end "${?}"
 	done
 }
-bhp_init "${@}"
+bhp_init_profile "${@}"
 BHP_RET="${?}"
 
+#
+# @FUNCTION: Maintain BHP archive tarballs
+#
 bhp()
 {
 	local EXT OLD PROFILE name=bhp tarball
@@ -343,6 +344,7 @@ bhp()
 case "${0##*/}" in
 	(bhp|browser-home-profile) [ ${BHP_RET} = 0 ] && bhp;;
 esac
+unset BHP_RET
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=2:sw=2:ts=2:

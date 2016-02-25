@@ -1,4 +1,4 @@
-PACKAGE     = supervision
+PACKAGE     = browser-home-profile
 VERSION     = $(shell sed -nre '3s/(.*):/\1/p' ChangeLog)
 
 PREFIX      = /usr/local
@@ -17,10 +17,8 @@ dist_EXTRA  = \
 	COPYING \
 	README.md \
 	ChangeLog
-dist_SCRIPTS  = \
-	browser-home-profile
 
-DISTFILES   = $(dist_EXTRA) $(dist_SCRIPTS)
+DISTFILES   = $(dist_EXTRA)
 dist_DIRS  += \
 	$(BINDIR) $(DOCDIR)/$(PACKAGE)-$(VERSION)
 DISTDIRS    = $(dist_DIRS)
@@ -32,13 +30,12 @@ FORCE:
 all:
 
 install: install-dir install-dist
+	$(install_SCRIPT) bhp.sh $(DESTDIR)$(BINDIR)/
 install-dist: $(DISTFILES)
 install-dir :
 	$(MKDIR_P) $(dist_DIRS:%=$(DESTDIR)%)
 install-doc : $(dist_EXTRA)
 
-$(dist_SCRIPTS): FORCE
-	$(install_SCRIPT) $@ $(DESTDIR)$(BINDIR)/$@
 $(dist_EXTRA): FORCE
 	$(install_DATA) $@ $(DESTDIR)$(DOCDIR)/$(PACKAGE)-$(VERSION)/$@
 
