@@ -1,8 +1,14 @@
 Header: browser-home-profile/ChangeLog, 2015/04/24
 
+2.1:
+
+Update print-helper format string to get a nice output format;
+Fixed bhp.sh to effectively run with additional '.sh' extension.
+
 2.0:
 
 Renamed browser-home-profile script to simply bhp.sh;
+Added perl script variant.
 
 1.0:
 
