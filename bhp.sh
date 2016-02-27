@@ -3,7 +3,7 @@
 # $Header: bhp.sh                                              Exp $
 # $Author: (c) 2012-2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)               Exp $
-# $Version: 1.0 2016/02/24                                     Exp $
+# $Version: 1.1 2016/02/24                                     Exp $
 #
 
 if [ -n "${ZSH_VERSION}" ]; then
@@ -27,8 +27,8 @@ esac
 #
 pr_error()
 {
-	local PFX=${name:+" ${CLR_MAG}${name}:${CLR_RST}"}
-	echo -e "${PR_EOL} ${CLR_RED}*${CLR_RST}${PFX} ${@}" >&2
+	local PFX="${name:+${CLR_MAG}${name}:${CLR_RST}}"
+	echo -e "${PR_EOL}${CLR_RED}*${CLR_RST} ${PFX} ${@}" >&2
 }
 
 #
@@ -44,8 +44,8 @@ die()
 #
 pr_info()
 {
-	local PFX=${name:+" ${CLR_YLW}${name}:${CLR_RST}"}
-	echo -e "${PR_EOL} ${CLR_BLU}*${CLR_RST}${PFX} ${@}"
+	local PFX="${name:+${CLR_YLW}${name}:${CLR_RST}}"
+	echo -e "${PR_EOL}${CLR_BLU}*${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -53,8 +53,8 @@ pr_info()
 #
 pr_warn()
 {
-	local PFX=${name:+" ${CLR_RED}${name}:${CLR_RST}"}
-	echo -e "${PR_EOL} ${CLR_YLW}*${CLR_RST}${PFX} ${@}"
+	local PFX="${name:+${CLR_RED}${name}:${CLR_RST}}"
+	echo -e "${PR_EOL}${CLR_YLW}*${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -64,8 +64,8 @@ pr_begin()
 {
 	echo -en "${PR_EOL}"
 	PR_EOL="\n"
-	local PFX=${name:+"${CLR_MAG}[${CLR_RST} ${CLR_BLU}${name}${CLR_RST}: ${CLR_MAG}]${CLR_RST}"}
-	echo -en " ${PFX} ${@}"
+	local PFX="${name:+${CLR_MAG}[${CLR_RST}${CLR_BLU}${name}${CLR_RST}${CLR_MAG}]${CLR_RST}}"
+	echo -en "${PFX} ${@}"
 }
 
 #
@@ -79,7 +79,7 @@ pr_end()
 		(*) suffix="${CLR_YLW}[${CLR_RST} ${CLR_RED}No${CLR_RST} ${CLR_YLW}]${CLR_RST}";;
 	esac
 	shift
-	echo -en " ${@} ${suffix}\n"
+	echo -e "${@} ${suffix}\n"
 	PR_EOL=
 }
 
@@ -281,10 +281,10 @@ bhp_init_profile()
 		grep -q "${dir}" /proc/mounts && continue
 		OLD="${PWD}"
 
-		pr_begin "Setting up directory...\n"
+		pr_begin "Setting up directory... "
 		cd "${dir%/*}" || { pr_end 1 Directory; continue; }
 		if [ ! -f "${PROFILE}${EXT}" ] || [ ! -f "${PROFILE}.old${EXT}" ]; then
-			tar -Ocp ${PROFILE} | ${BHP_COMPRESSOR} ${PROFILE}${EXT} ||
+			tar -Ocp ${PROFILE} | ${BHP_COMPRESSOR} ${PROFILE}${EXT} &>/dev/null ||
 				{ pr_end 1 Tarball; continue; }
 		fi
 		cd "${OLD}"
@@ -314,7 +314,7 @@ bhp()
 		[ -d "${dir}" ] || continue
 		OLD="${PWD}"
 
-		pr_begin "Setting up tarball...\n"
+		pr_begin "Setting up tarball... "
 		cd "${dir%/*}" || continue
 		if [ -f ${PROFILE}/.unpacked ]; then
 			if [ -f ${PROFILE}${EXT} ]; then
@@ -322,7 +322,7 @@ bhp()
 					{ pr_end 1 Moving; continue; }
 			fi
 			tar -X ${PROFILE}/.unpacked -Ocp ${PROFILE} | \
-				${BHP_COMPRESSOR} ${PROFILE}${EXT} ||
+				${BHP_COMPRESSOR} ${PROFILE}${EXT} &>/dev/null ||
 				{ pr_end 1 Packing; continue; }
 		else
 			if [ -f ${PROFILE}${EXT} ]; then
@@ -342,7 +342,7 @@ bhp()
 }
 
 case "${0##*/}" in
-	(bhp|browser-home-profile) [ ${BHP_RET} = 0 ] && bhp;;
+	(bhp*|browser-home-profile*) [ ${BHP_RET} = 0 ] && bhp;;
 esac
 unset BHP_RET
 
