@@ -3,7 +3,7 @@
 # $Header: bhp.pl                                         Exp $
 # $Author: (c) 2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)          Exp $
-# $Version: 1.0 2016/02/24                                Exp $
+# $Version: 1.1 2016/02/26                                Exp $
 #
 
 use v5.14.0;
@@ -15,10 +15,10 @@ $Getopt::Std::STANDARD_HELP_VERSION = 1;
 our $VERSION = "1.0";
 
 my(%color, @bg, @fg, %bhp);
-my $PR_EOL = "";
+my($PR_COL, $PR_LEN, $PR_EOL) = (`tput cols`, 0, "");
 $bhp{color} = 1;
 ($bhp{zero}) = $0 =~ m|(?:.*/)?(\w.+)$|g;
-my $name = "bhp";
+my $name = $bhp{zero};
 
 sub HELP_MESSAGE {
 	print <<"EOH"
@@ -80,10 +80,11 @@ Print error message to stderr
 # @FUNCTION: Print error message to stderr
 #
 sub pr_error {
-	my $pfx;
+	my($msg, $pfx) = (join ' ', @_);
+	$PR_LEN = length($msg) + length($name) + 2;
+
 	$pfx = "$color{'fg-magenta'}${name}:$color{reset}" if defined($name);
-	print STDERR $PR_EOL;
-	print STDERR " $color{'fg-red'}*$color{reset} $pfx ", join ' ', @_;
+	print STDERR "$PR_EOL$color{'fg-red'}*$color{reset} $pfx $msg";
 }
 
 =head2 pr_die
@@ -111,10 +112,11 @@ Print info message to stdout
 # @FUNCTION: Print info message to stdout
 #
 sub pr_info {
-	my $pfx;
+	my($msg, $pfx) = (join ' ', @_);
+	$PR_LEN = length($msg) + length($name) + 2;
+
 	$pfx = "$color{'fg-yellow'}${name}:$color{reset}" if defined($name);
-	print $PR_EOL;
-	print " $color{'fg-blue'}*$color{reset} $pfx ", join ' ', @_;
+	print "$PR_EOL$color{'fg-blue'}*$color{reset} $pfx $msg";
 }
 
 =head2 pr_warn
@@ -127,10 +129,11 @@ Print warning message to stdout
 # @FUNCTION: Print warn message to stdout
 #
 sub pr_warn {
-	my $pfx;
+	my($msg, $pfx) = (join ' ', @_);
+	$PR_LEN = length($msg) + length($name) + 2;
+
 	$pfx = " $color{'fg-red'}${name}:$color{reset}" if defined($name);
-	print STDOUT $PR_EOL;
-	print STDOUT " $color{'fg-yellow'}*$color{reset} $pfx ", join ' ', @_;
+	print STDOUT "$PR_EOL$color{'fg-yellow'}*$color{reset} $pfx $msg";
 }
 
 =head2 pr_begin
@@ -143,12 +146,13 @@ Print the beginning of a formated message to stdout
 # @FUNCTION: Print begin message to stdout
 #
 sub pr_begin {
-	print "$PR_EOL";
+	my($msg, $pfx) = (join ' ', @_);
+	print $PR_EOL if defined($PR_EOL);
 	$PR_EOL = "\n";
-	my $pfx;
-	$pfx = "${color{'fg-magenta'}}[$color{reset} $color{'fg-blue'}${name}$color{reset} $color{'fg-magenta'}]${color{reset}}"
+	$PR_LEN = length($msg) + length($name) + 2;
+	$pfx = "${color{'fg-magenta'}}[$color{reset}$color{'fg-blue'}${name}$color{reset}$color{'fg-magenta'}]${color{reset}}"
 		 if defined($name);
-	print " $pfx ", join ' ', @_;
+	printf "%s", "$pfx $msg";
 }
 
 =head2 pr_end
@@ -162,13 +166,16 @@ Print the end of a formated message to stdout
 #
 sub pr_end {
 	my($val, $sfx) = (shift);
+	my $msg = (join ' ', @_);
+	my $len = $PR_COL - $PR_LEN;
+
 	if ($val == 0) {
-		$sfx="${color{'fg-blue'}}[$color{reset} $color{'fg-green'}Ok$color{reset} $color{'fg-blue'}]$color{reset}";
+		$sfx="${color{'fg-blue'}}[$color{reset}$color{'fg-green'}Ok$color{reset}$color{'fg-blue'}]$color{reset}";
 	} else {
-		$sfx="${color{'fg-yellow'}}[$color{reset} $color{'fg-red'}No$color{reset} $color{'fg-yellow'}]$color{reset}";
+		$sfx="${color{'fg-yellow'}}[$color{reset}$color{'fg-red'}No$color{reset}$color{'fg-yellow'}]$color{reset}";
 	}
-	print join(' ', @_), " $sfx\n";
-	$PR_EOL = "";
+	printf "%${len}s\n", "$msg $sfx";
+	($PR_EOL, $PR_LEN) = ();
 }
 
 =head2 yesno
@@ -349,7 +356,7 @@ sub bhp {
 			next;
 		}
 		unless (-f "$profile$ext" || -f "$profile.old$ext" ) {
-			if (system("tar -Ocp $profile | " . join(' ', @{$bhp{compressor}}) . " $profile$ext")) {
+			if (system("tar -Ocp $profile | " . join(' ', @{$bhp{compressor}}) . " $profile$ext &>/dev/null")) {
 				pr_end(1, "Tarball");
 				next;
 			}
@@ -359,7 +366,7 @@ sub bhp {
 			bhp_archive($ext, $profile) if ($opts{s});
 			next;
 		}
-		pr_begin("Setting up directory...\n");
+		pr_begin("Setting up directory... ");
 
 		if ($dir =~ /cache/) { $char = 'c' }
 		else { $char = 'b' }
@@ -380,7 +387,7 @@ sub bhp {
 sub bhp_archive {
 	my($ext, $profile, $tarball) = @_;
 
-	pr_begin("Setting up tarball...\n");
+	pr_begin("Setting up tarball... ");
 	if (-f "$profile/.unpacked") {
 		if (-f "$profile$ext") {
 			unless(rename("$profile$ext", "$profile.old$ext")) {
@@ -388,7 +395,7 @@ sub bhp_archive {
 				return 1;
 			}
 		}
-		if(system("tar -X $profile/.unpacked -ocp $profile | " . join(' ', @{$bhp{compressor}}) . " $profile$ext")) {
+		if(system("tar -X $profile/.unpacked -ocp $profile | " . join(' ', @{$bhp{compressor}}) . " $profile$ext &>/dev/null")) {
 			pr_end(1, "Packing");
 			return 2;
 		}
