@@ -36,6 +36,14 @@ sub VERSION_MESSAGE {
 	print "$bhp{zero} version $VERSION\n";
 }
 
+#
+# Handle window resize signal
+#
+sub sigwinch_handler {
+	$PR_COL = `tput cols`;
+}
+$SIG{WINCH} = "sigwinch_handler";
+
 =head1 SYNOPSIS
 
 bhp.pl [OPTIONS] [BROWSER] (see bhp.pl --help for the optional switches)
