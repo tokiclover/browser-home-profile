@@ -258,7 +258,7 @@ A tiny helper to simplify probing mounted points
 sub mount_info {
 	return undef unless defined($_[0]);
 	my($MFH, $ret);
-	open($MFH, q(<), "/proc/mounts") or pr_die "Failed to open /proc/mounts";
+	open($MFH, q(<), "/proc/mounts") or pr_die("Failed to open /proc/mounts");
 	while (<$MFH>) {
 		if (m|$_[0]\b|) { $ret = 1; last; }
 		else { $ret = 0 }
