@@ -16,11 +16,27 @@ elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs extglob
 fi
 
+#
+# Setup a few environment variables beforehand
+#
 NULL=/dev/null
 case "${0##*/}" in
 	(bhp*|browser-home-profile*) BHP_ZERO="${0##*/}";;
 	(*) BHP_ZERO=bhp;;
 esac
+
+if command -v printf &>NULL; then
+	PRINTF()
+	{
+		printf "%*b\n" "${PR_LEN}" "${*}"
+	}
+else
+	PRINTF()
+	{
+		echo -e "${*}"
+	}
+fi
+PR_COL="$(tput cols)"
 
 #
 # @FUNCTION: Print error message to stderr
@@ -64,6 +80,7 @@ pr_begin()
 {
 	echo -en "${PR_EOL}"
 	PR_EOL="\n"
+	PR_LEN=$((${#name}+3+${#*}))
 	local PFX="${name:+${CLR_MAG}[${CLR_BLU}${name}${CLR_MAG}]${CLR_RST}}"
 	echo -en "${PFX} ${@}"
 }
@@ -79,8 +96,10 @@ pr_end()
 		(*) suffix="${CLR_YLW}[${CLR_RED}No${CLR_YLW}]${CLR_RST}";;
 	esac
 	shift
-	echo -e "${@} ${suffix}\n"
+	PR_LEN=$((${PR_COL}-${PR_LEN}))
+	PRINTF "${@} ${suffix}"
 	PR_EOL=
+	PR_LEN=0
 }
 
 #
