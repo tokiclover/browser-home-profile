@@ -64,7 +64,7 @@ pr_begin()
 {
 	echo -en "${PR_EOL}"
 	PR_EOL="\n"
-	local PFX="${name:+${CLR_MAG}[${CLR_RST}${CLR_BLU}${name}${CLR_RST}${CLR_MAG}]${CLR_RST}}"
+	local PFX="${name:+${CLR_MAG}[${CLR_BLU}${name}${CLR_MAG}]${CLR_RST}}"
 	echo -en "${PFX} ${@}"
 }
 
@@ -75,8 +75,8 @@ pr_end()
 {
 	local suffix
 	case "${1-0}" in
-		(0) suffix="${CLR_BLU}[${CLR_RST} ${CLR_GRN}Ok${CLR_RST} ${CLR_BLU}]${CLR_RST}";;
-		(*) suffix="${CLR_YLW}[${CLR_RST} ${CLR_RED}No${CLR_RST} ${CLR_YLW}]${CLR_RST}";;
+		(0) suffix="${CLR_BLU}[${CLR_GRN}Ok${CLR_BLU}]${CLR_RST}";;
+		(*) suffix="${CLR_YLW}[${CLR_RED}No${CLR_YLW}]${CLR_RST}";;
 	esac
 	shift
 	echo -e "${@} ${suffix}\n"
