@@ -3,7 +3,7 @@
 # $Header: bhp.sh                                              Exp $
 # $Author: (c) 2012-2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)               Exp $
-# $Version: 1.1 2016/02/24                                     Exp $
+# $Version: 1.2 2016/03/08                                     Exp $
 #
 
 if [ -n "${ZSH_VERSION}" ]; then
@@ -287,7 +287,7 @@ bhp_init_profile()
 		(mozilla*) bhp_mozilla_profile "${BHP_PROFILE}" "${PROFILE}";;
 	esac
 
-:	${BHP_COMPRESSOR:=lz4 -1 -}
+:	${BHP_COMPRESSOR:=lz4 -1}
 :	${EXT=.tar.${BHP_COMPRESSOR%% *}}
 :	${tmpdir:=${TMPDIR:-/tmp/$USER}}
 :	${PROFILE:=${BHP_PROFILE##*/}}
@@ -303,7 +303,7 @@ bhp_init_profile()
 		pr_begin "Setting up directory... "
 		cd "${dir%/*}" || { pr_end 1 Directory; continue; }
 		if [ ! -f "${PROFILE}${EXT}" ] || [ ! -f "${PROFILE}.old${EXT}" ]; then
-			tar -Ocp ${PROFILE} | ${BHP_COMPRESSOR} ${PROFILE}${EXT} &>/dev/null ||
+			tar -cpf ${PROFILE}${EXT}  -I "${BHP_COMPRESSOR}" ${PROFILE} ||
 				{ pr_end 1 Tarball; continue; }
 		fi
 		cd "${OLD}"
@@ -340,9 +340,8 @@ bhp()
 				mv -f ${PROFILE}${EXT} ${PROFILE}.old${EXT} ||
 					{ pr_end 1 Moving; continue; }
 			fi
-			tar -X ${PROFILE}/.unpacked -Ocp ${PROFILE} | \
-				${BHP_COMPRESSOR} ${PROFILE}${EXT} &>/dev/null ||
-				{ pr_end 1 Packing; continue; }
+			tar -X ${PROFILE}/.unpacked -cpf ${PROFILE}${EXT}  -I "${BHP_COMPRESSOR}" \
+				${PROFILE} || { pr_end 1 Packing; continue; }
 		else
 			if [ -f ${PROFILE}${EXT} ]; then
 				tarball=${PROFILE}${EXT}
@@ -351,9 +350,8 @@ bhp()
 			else
 				pr_warn "No tarball found."; continue
 			fi
-			${BHP_COMPRESSOR%% *} -cd ${tarball} | tar -xp &&
-				touch ${PROFILE}/.unpacked ||
-				{ pr_end 1 Unpacking; continue; }
+			tar -xpf ${PROFILE}${EXT}  -I "${BHP_COMPRESSOR}" ${PROFILE} &&
+				touch ${PROFILE}/.unpacked || { pr_end 1 Unpacking; continue; }
 		fi
 		pr_end "${?}"
 		cd "${OLD}"
