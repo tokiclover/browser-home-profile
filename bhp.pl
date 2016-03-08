@@ -3,7 +3,7 @@
 # $Header: bhp.pl                                         Exp $
 # $Author: (c) 2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)          Exp $
-# $Version: 1.1 2016/02/26                                Exp $
+# $Version: 1.2 2016/03/06                                Exp $
 #
 
 use v5.14.0;
@@ -15,7 +15,7 @@ $Getopt::Std::STANDARD_HELP_VERSION = 1;
 our $VERSION = "1.0";
 
 my(%color, @bg, @fg, %bhp);
-my($PR_COL, $PR_LEN, $PR_EOL) = (`tput cols`, 0, "");
+my($PR_COL, $PR_LEN, $PR_EOL) = (tput('cols', 1), 0, "");
 $bhp{color} = 1;
 ($bhp{zero}) = $0 =~ m|(?:.*/)?(\w.+)$|g;
 my $name = $bhp{zero};
@@ -40,7 +40,7 @@ sub VERSION_MESSAGE {
 # Handle window resize signal
 #
 sub sigwinch_handler {
-	$PR_COL = `tput cols`;
+	$PR_COL = tput('cols', 1);
 }
 $SIG{WINCH} = "sigwinch_handler";
 
@@ -78,7 +78,26 @@ be copy/pasted to any project or personal script.
 
 =cut
 
-=head2 pr_error
+=head2 tput(cap[, 1])
+
+Simple helper to querry terminfo(5) capabilities without a shell (implied by
+the `cmd` construct.) Second argument enable int conversion.
+
+=cut
+
+#
+# @FUNCTION: Simple helper to querry terminfo capabilities without a shell
+#
+sub tput {
+	my($cap, $conv) = @_;
+	open(my $TPUT, '-|', 'tput', $cap) or die "Failed to launch tput: $!";
+	chomp(my @val = <$TPUT>);
+	close($TPUT);
+	return int($val[0]) if defined(yesno($conv));
+	return @val;
+}
+
+=head2 pr_error(str)
 
 Print error message to stderr
 
@@ -95,7 +114,7 @@ sub pr_error {
 	print STDERR "$PR_EOL$color{'fg-red'}*$color{reset} $pfx $msg";
 }
 
-=head2 pr_die
+=head2 pr_die(err, str)
 
 Print error message to stderr and exit program
 
@@ -110,7 +129,7 @@ sub pr_die {
 	exit($ret);
 }
 
-=head2 pr_info
+=head2 pr_info(str)
 
 Print info message to stdout
 
@@ -127,7 +146,7 @@ sub pr_info {
 	print "$PR_EOL$color{'fg-blue'}*$color{reset} $pfx $msg";
 }
 
-=head2 pr_warn
+=head2 pr_warn(str)
 
 Print warning message to stdout
 
@@ -144,7 +163,7 @@ sub pr_warn {
 	print STDOUT "$PR_EOL$color{'fg-yellow'}*$color{reset} $pfx $msg";
 }
 
-=head2 pr_begin
+=head2 pr_begin(str)
 
 Print the beginning of a formated message to stdout
 
@@ -158,12 +177,12 @@ sub pr_begin {
 	print $PR_EOL if defined($PR_EOL);
 	$PR_EOL = "\n";
 	$PR_LEN = length($msg) + length($name) + 2;
-	$pfx = "${color{'fg-magenta'}}[$color{reset}$color{'fg-blue'}${name}$color{reset}$color{'fg-magenta'}]${color{reset}}"
+	$pfx = "${color{'fg-magenta'}}[$color{'fg-blue'}${name}$color{'fg-magenta'}]${color{reset}}"
 		 if defined($name);
 	printf "%s", "$pfx $msg";
 }
 
-=head2 pr_end
+=head2 pr_end(err[, str])
 
 Print the end of a formated message to stdout
 
@@ -178,15 +197,15 @@ sub pr_end {
 	my $len = $PR_COL - $PR_LEN;
 
 	if ($val == 0) {
-		$sfx="${color{'fg-blue'}}[$color{reset}$color{'fg-green'}Ok$color{reset}$color{'fg-blue'}]$color{reset}";
+		$sfx="${color{'fg-blue'}}[$color{'fg-green'}Ok$color{'fg-blue'}]$color{reset}";
 	} else {
-		$sfx="${color{'fg-yellow'}}[$color{reset}$color{'fg-red'}No$color{reset}$color{'fg-yellow'}]$color{reset}";
+		$sfx="${color{'fg-yellow'}}[$color{'fg-red'}No$color{'fg-yellow'}]$color{reset}";
 	}
 	printf "%${len}s\n", "$msg $sfx";
 	($PR_EOL, $PR_LEN) = ();
 }
 
-=head2 yesno
+=head2 yesno([01]|{true|false|etc})
 
 A tiny helper to simplify case incensitive yes/no configuration
 
@@ -208,7 +227,7 @@ sub yesno {
 
 =head2 eval_colors
 
-Set up colors for output for the print helper family
+Set up colors for output for the print helper family if stdout is a tty
 
 =cut
 
@@ -225,8 +244,7 @@ sub eval_colors {
 	%color = map { $bc[$_], "$esc${val[$_]}m" } 0..$#val;
 	$color{'reset'} = "${esc}0m";
 
-	my $tput = `tput colors`;
-	if ($tput >= 256) {
+	if (tput('colors', 1) >= 256) {
 		($bg, $fg, $num) = ('48;5;', '38;5;', 256);
 	} else {
 		($bg, $fg, $num) = (4, 3, 8);
@@ -245,11 +263,11 @@ sub eval_colors {
 #
 # Set up colors
 #
-if (-t STDIN && yesno($bhp{color})) {
+if (-t STDOUT && yesno($bhp{color})) {
 	eval_colors();
 }
 
-=head2 mount_info
+=head2 mount_info (dir)
 
 A tiny helper to simplify probing mounted points
 
