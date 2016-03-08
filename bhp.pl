@@ -10,6 +10,7 @@ use v5.14.0;
 use strict;
 use warnings;
 use File::Temp qw(tempdir);
+use File::Basename;
 use Getopt::Std;
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 our $VERSION = "1.0";
@@ -359,7 +360,7 @@ sub bhp {
 	if ($bhp{profile} =~ /mozilla/) {
 		mozilla_profile($bhp{profile}, $opts{p});
 	}
-	($profile) = $bhp{profile} =~ m|/(\w+)$|g;
+	$profile = basename($bhp{profile});
 
 	#
 	# Set up directories for futur use
@@ -377,7 +378,7 @@ sub bhp {
 	# Finaly, set up temporary bind-mount directories
 	#
 	for $dir (@{$bhp{dirs}}) {
-		unless(chdir "$dir/../") {
+		unless(chdir dirname($dir)) {
 			pr_end(1, "Directory");
 			next;
 		}
