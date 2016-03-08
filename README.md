@@ -4,7 +4,7 @@ cache directory. It will put those direcories, if any, to a temporary directory
 improve performance and responsiveness to said web-browser.
 
 Many web-broser are supported out of the box. Namely, aurora, firefox, icecat,
-seamonkey (mozilla family), conkeror, chrom, epiphany, midory, opera, otter,
+seamonkey (mozilla family), conkeror, chrom{e,ium}, epiphany, midory, opera, otter,
 qupzilla, netsurf, vivaldi. Specifying a particular web-broser on the command
 line is supported along with discovering one in the user home directory (first
 found would be used.)
