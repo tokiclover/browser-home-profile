@@ -345,8 +345,8 @@ sub bhp {
 	if ($opts{v}) { VERSION_MESSAGE(); exit(0); }
 
 	$bhp{browser} = $ARGV[0] // $ENV{BROWSER};
-	$bhp{compressor} =  defined($opts{c}) ? [split $opts{c} ] : [ qw(lz4 -1 -) ];
-	$ext = ".tar.$bhp{compressor}->[0]";
+	$bhp{compressor} =  defined($opts{c}) ? $opts{c} : 'lz4 -1';
+	$ext = '.tar.' . (split /\s/, $bhp{compressor})[0];
 	$TMPDIR = defined($opts{t}) ? $opts{t} : $ENV{TMPDIR} // "/tmp/$ENV{USER}";
 
 	#
@@ -383,9 +383,9 @@ sub bhp {
 			next;
 		}
 		unless (-f "$profile$ext" || -f "$profile.old$ext" ) {
-			my @cmd_in  = ('tar', '-Ocp', $profile);
-			my @cmd_out = (@{$bhp{compressor}}, "$profile$ext");
-			if (bhp_archive_cmd(\@{cmd_in}, \@cmd_out)) {
+			system('tar', '-X', "$profile/.unpacked", '-cpf', "$profile$ext",
+				'-Hposix', '-I', "$bhp{compressor}", $profile);
+			if ($?) {
 				pr_end(1, "Tarball");
 				next;
 			}
@@ -411,30 +411,6 @@ sub bhp {
 }
 
 #
-# @FUNCTION: Use a child for archive maintainence to avoid shell handling
-#   using a simple fork/system
-#
-sub bhp_archive_cmd {
-	my($in, $out) = @_;
-	open(my $FH, '-|', @$in) or die "Failed to launch $in->[0]: $!";
-	my $fd = fileno($FH);
-	my $pid = fork();
-	die "Cannot fork" unless defined($pid);
-
-	if ($pid) {
-		wait();
-		if ($? == -1 or $? > 0) {
-			return 2;
-		}
-		return 0;
-	} else {
-		open(STDIN, "<&$fd") or die "Cannot duplicate STDIN: $!";
-		system(@$out);
-		exit($?);
-	}
-}
-
-#
 # Set up or (un)compress archive tarballs accordingly
 #
 sub bhp_archive {
@@ -449,9 +425,9 @@ sub bhp_archive {
 				return 1;
 			}
 		}
-		@cmd_in  = ('tar', '-X', "$profile/.unpacked", '-ocp', $profile);
-		@cmd_out = (@{$bhp{compressor}}, "$profile$ext");
-		pr_end(1, "Packing") if bhp_archive_cmd(\@cmd_in, \@cmd_out);
+		system('tar', '-X', "$profile/.unpacked", '-cpf', "$profile$ext",
+			'-I', "$bhp{compressor}", $profile);
+		pr_end(1, "Packing") if ($?);
 	} else {
 		if    (-f "$profile$ext"    ) { $tarball = "$profile$ext"     }
 		elsif (-f "$profile.old$ext") { $tarball = "$profile.old$ext" }
@@ -459,9 +435,8 @@ sub bhp_archive {
 			pr_warn("No tarball found.");
 			return 3;
 		}
-		@cmd_in  = ($bhp{compressor}->[0], '-cd', $tarball);
-		@cmd_out = ('tar', '-xp');
-		if (bhp_archive_cmd(\@cmd_in,\@cmd_out)) {
+		system('tar', '-xpf', "$profile$ext", '-I', "$bhp{compressor}", $profile);
+		if ($?) {
 			pr_end(1, "Unpacking");
 			return 4;
 		} else {
