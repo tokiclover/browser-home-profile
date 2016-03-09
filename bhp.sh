@@ -6,15 +6,19 @@
 # $Version: 1.2 2016/03/08                                     Exp $
 #
 
+TRAP='trap PRINT_COL="$(tput cols)" WINCH'
 if [ -n "${ZSH_VERSION}" ]; then
 	emulate sh
 	NULLCMD=:
 	setopt SH_WORD_SPLIT
 	setopt EXTENDED_GLOB NULL_GLOB
+	eval "${TRAP}"
 elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs nullglob
 	shopt -qs extglob
+	eval "${TRAP}"
 fi
+unset TRAP
 
 #
 # Setup a few environment variables beforehand
@@ -28,7 +32,7 @@ esac
 if command -v printf &>NULL; then
 	PRINTF()
 	{
-		printf "%*b\n" "${PR_LEN}" "${*}"
+		printf "%*b\n" "${PRINT_LEN}" "${*}"
 	}
 else
 	PRINTF()
@@ -36,7 +40,7 @@ else
 		echo -e "${*}"
 	}
 fi
-PR_COL="$(tput cols)"
+PRINT_COL="$(tput cols)"
 
 #
 # @FUNCTION: Print error message to stderr
@@ -44,7 +48,7 @@ PR_COL="$(tput cols)"
 pr_error()
 {
 	local PFX="${name:+${CLR_MAG}${name}:${CLR_RST}}"
-	echo -e "${PR_EOL}${CLR_RED}*${CLR_RST} ${PFX} ${@}" >&2
+	echo -e "${PRINT_EOL}${CLR_RED}*${CLR_RST} ${PFX} ${@}" >&2
 }
 
 #
@@ -61,7 +65,7 @@ die()
 pr_info()
 {
 	local PFX="${name:+${CLR_YLW}${name}:${CLR_RST}}"
-	echo -e "${PR_EOL}${CLR_BLU}*${CLR_RST} ${PFX} ${@}"
+	echo -e "${PRINT_EOL}${CLR_BLU}*${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -70,7 +74,7 @@ pr_info()
 pr_warn()
 {
 	local PFX="${name:+${CLR_RED}${name}:${CLR_RST}}"
-	echo -e "${PR_EOL}${CLR_YLW}*${CLR_RST} ${PFX} ${@}"
+	echo -e "${PRINT_EOL}${CLR_YLW}*${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -78,9 +82,9 @@ pr_warn()
 #
 pr_begin()
 {
-	echo -en "${PR_EOL}"
-	PR_EOL="\n"
-	PR_LEN=$((${#name}+3+${#*}))
+	echo -en "${PRINT_EOL}"
+	PRINT_EOL="\n"
+	PRINT_LEN=$((${#name}+3+${#*}))
 	local PFX="${name:+${CLR_MAG}[${CLR_BLU}${name}${CLR_MAG}]${CLR_RST}}"
 	echo -en "${PFX} ${@}"
 }
@@ -96,10 +100,10 @@ pr_end()
 		(*) suffix="${CLR_YLW}[${CLR_RED}No${CLR_YLW}]${CLR_RST}";;
 	esac
 	shift
-	PR_LEN=$((${PR_COL}-${PR_LEN}))
+	PRINT_LEN=$((${PRINT_COL}-${PRINT_LEN}))
 	PRINTF "${@} ${suffix}"
-	PR_EOL=
-	PR_LEN=0
+	PRINT_EOL=
+	PRINT_LEN=0
 }
 
 #
@@ -130,7 +134,7 @@ eval_colors()
 	CLR_RST="${ESC}0m"
 }
 
-if [ -t 1 ] && yesno "${COLOR:-Yes}"; then
+if [ -t 1 ] && yesno "${PRINT_COLOR:-Yes}"; then
 	eval_colors
 fi
 
@@ -223,23 +227,22 @@ EOH
 
 bhp_find_browser()
 {
-	local BROWSERS MOZ_BROWSERS set brs dir
-	MOZ_BROWSERS='aurora firefox icecat seamonkey'
-	BROWSERS='conkeror chrom epiphany midory opera otter qupzilla netsurf vivaldi'
+	local BROWSERS MOZ_BROWSERS group browser
+	MOZILLA_BROWSERS='aurora firefox icecat seamonkey'
+	BROWSERS='conkeror chrome chromium epiphany midory opera otter qupzilla netsurf vivaldi'
 
 	case "${1}" in
-		(*aurora|firefox*|icecat|seamonkey)
+		(aurora|firefox|icecat|seamonkey)
 			BROWSER="${1}" BHP_PROFILE="mozilla/${1}"; return;;
-		(conkeror*|*chrom*|epiphany|midory|opera*|otter*|qupzilla|netsurf*|vivaldi*)
+		(conkeror|chrome|chromium|epiphany|midory|opera|otter|qupzilla|netsurf|vivaldi)
 			BROWSER="${1}" BHP_PROFILE="config/${1}" ; return;;
 	esac
 
-	for set in "mozilla:${MOZ_BROWSERS}" "config:${BROWSERS}"; do
-		for brs in ${set#*:}; do
-			set="${set%:*}"
-			for dir in "${HOME}"/.${set}/*${brs}*; do
-				[ -d "${dir}" ] && { BROWSER="${brs}" BHP_PROFILE="${set}/${brs}"; return; }
-			done
+	for group in "mozilla:${MOZILLA_BROWSERS}" "config:${BROWSERS}"; do
+		for browser in ${group#*:}; do
+			group="${group%:*}"
+			[ -d "${HOME}/.${group}/${browser}" ] &&
+				{ BROWSER="${browser}" BHP_PROFILE="${group}/${browser}"; return; }
 		done
 	done
 	return 1
@@ -253,7 +256,7 @@ bhp_mozilla_profile()
 	BHP_PROFILE="${1}/$(sed -nre "s|^[Pp]ath=(.*$)|\1|p" \
 		${HOME}/.${1}/profiles.ini)"
 	[ -n "${BHP_PROFILE}" -a -d "${HOME}/.${BHP_PROFILE}" ] ||
-		{ pr_error "No firefox profile dir found"; return 113; }
+		{ pr_error "No mozilla profile dir found"; return 113; }
 }
 
 #
