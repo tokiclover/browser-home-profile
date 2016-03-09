@@ -35,6 +35,7 @@ print_info['color'], bhp_info['zero'] = 1, os.path.basename(sys.argv[0])
 HELP_MESSAGE = 'Usage: %s [OPTIONS] [BROWSER]' % bhp_info['zero']
 HELP_MESSAGE += """
     -c, --compressor 'lzop -1'   Use lzop compressor (default to lz4)
+    -d, --daemon 300             Sync time (in sec) when daemonized
     -t, --tmpdir DIR             Set up a particular TMPDIR
     -p, --profiel PROFILE        Select a particular profile
     -s, --set                    Set up tarball archives
@@ -316,9 +317,22 @@ def bhp_archive(ext, profile):
 
     pr_end(0)
 
+def bhp_daemon(time=(60*5)):
+    """Simple function to handle syncing the tarball archive to disk"""
+    while True:
+        signal.alarm(int(time))
+        signal.pause()
+
+def sigalrm_handler(sig=signal.SIGALRM, frame=None):
+    for dir in bhp_info['dirs']:
+        os.chdir(os.path.dirname(dir))
+        bhp_archive('.tar.%s' % bhp_info['compressor'].split(' ')[0],
+                bhp_info['profile'].split('/')[-1])
+signal.signal(signal.SIGALRM, sigalrm_handler)
+
 if __name__ == '__main__':
     bhp_info['browser'], bhp_info['compressor'] = '', 'lz4 -1'
-    profile, setup, name, daemon = '', False, bhp_info['zero'], 0
+    profile, setup, name, bhp_info['daemon'] = '', False, bhp_info['zero'], 0
     if 'TMPDIR' in os.environ:
         TMPDIR = os.environ['TMPDIR']
     elif 'USER' in os.environ:
@@ -329,8 +343,8 @@ if __name__ == '__main__':
     # Set up options according to command line options
     #
     import getopt, re
-    shortopts = 'c:hp:st:v'
-    longopts  = ['compressor=', 'help', 'profile=', 'set', 'tmpdir=', 'version']
+    shortopts = 'c:d:hp:st:v'
+    longopts  = ['compressor=', 'daemon=', 'help', 'profile=', 'set', 'tmpdir=', 'version']
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError:
@@ -352,6 +366,8 @@ if __name__ == '__main__':
             setup = True
         if opt in ['-t', '--tmpdir']:
             TMPDIR = arg
+        if opt in ['-d', '--daemon=']:
+            bhp_info['daemon'] = arg
 
     if len(args):
         bhp_info['browser'] = args[0]
@@ -362,6 +378,7 @@ if __name__ == '__main__':
     # Finally, launch the setup helper
     #
     bhp(profile=profile,setup=setup)
+    if bhp_info['daemon']: bhp_daemon(bhp_info['daemon'])
 
 #
 # vim:fenc=utf-8:ci:pi:sts=4:sw=4:ts=4:expandtab
