@@ -33,6 +33,8 @@ install: install-dir install-dist
 	$(install_SCRIPT) bhp.sh $(DESTDIR)$(BINDIR)/
 install-perl: install-dir install-dist
 	$(install_SCRIPT) bhp.pl $(DESTDIR)$(BINDIR)/
+install-python: install-dir install-dist
+	$(install_SCRIPT) bhp.py $(DESTDIR)$(BINDIR)/
 install-dist: $(DISTFILES)
 install-dir :
 	$(MKDIR_P) $(dist_DIRS:%=$(DESTDIR)%)
