@@ -26,6 +26,7 @@ sub HELP_MESSAGE {
 	print <<"EOH"
 Usage: $bhp_info{zero} [OPTIONS] [BROWSER]
   -c 'lzop -1'     Use lzop compressor (default to lz4)
+  -d 300           Sync time (in sec) when daemonized
   -t DIR           Set up a particular TMPDIR
   -p PROFILE       Select a particular profile
   -s               Set up tarball archives
@@ -45,6 +46,17 @@ sub sigwinch_handler {
 	$print_info{cols} = tput('cols', 1);
 }
 $SIG{WINCH} = "sigwinch_handler";
+
+sub sigalrm_handler {
+	for my $dir (@{$bhp_info{dirs}}) {
+		unless(chdir dirname($dir)) {
+			pr_end(1, "Directory");
+			next;
+		}
+		bhp_archive('.tar.' . (split /\s/, $bhp_info{compressor})[0], basename($bhp_info{profile}));
+	}
+}
+$SIG{ALRM} = "sigalrm_handler";
 
 =head1 SYNOPSIS
 
@@ -345,10 +357,11 @@ sub bhp {
 	#
 	# Set up options according to command line options
 	#
-	getopts('c:hp:st:v', \%opts) or die "Failed to process options";
+	getopts('c:d:hp:st:v', \%opts) or die "Failed to process options";
 	if ($opts{h}) { HELP_MESSAGE()   ; exit(0); }
 	if ($opts{v}) { VERSION_MESSAGE(); exit(0); }
 
+	$bhp_info{daemon} = $opts{d} // 0;
 	$bhp_info{browser} = $ARGV[0] // $ENV{BROWSER};
 	$bhp_info{compressor} =  defined($opts{c}) ? $opts{c} : 'lz4 -1';
 	$ext = '.tar.' . (split /\s/, $bhp_info{compressor})[0];
@@ -453,8 +466,20 @@ sub bhp_archive {
 	pr_end(0);
 }
 
+#
+# @FUNCTION: Simple deamon to handle syncing the tarball archive to disk
+#
+sub bhp_daemon {
+  my $arg = shift // 300;
+	while (1) {
+		alarm($arg);
+		POSIX::pause();
+	}
+}
+
 if (__PACKAGE__ eq "main") {
 	bhp();
+	bhp_daemon() if $bhp_info{daemon};
 }
 
 __END__
