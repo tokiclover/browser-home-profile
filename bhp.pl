@@ -287,24 +287,27 @@ sub mount_info {
 }
 
 sub find_browser {
+	my($browser, $profile) = @_;
 	my %browser = (
 		'mozilla', [ qw(aurora firefox icecat seamonkey) ],
-		'config',  [ qw(conkeror chrom epiphany midory opera otter qupzilla netsurf vivaldi) ],
+		'config',  [ qw(conkeror chrome chromium epiphany midory opera otter qupzilla netsurf vivaldi) ],
 	);
 
-	if (defined($_[0])) {
-	if ($_[0] =~ /.*aurora|firefox.*|icecat|seamonkey/) {
-		($bhp{browser}, $bhp{profile}) = ($_[0], "mozilla/$_[0]"); return 0; }
-	elsif ($_[0] =~ /conkeror.*|.*chrom.*|epiphany|midory|opera.*|otter.*|qupzilla|netsurf.*|vivaldi.*/) {
-		($bhp{browser}, $bhp{profile}) = ($_[0], "config/$_[0]" ); return 0; }
+	if (defined($browser)) {
+		if ($browser =~ /aurora|firefox|icecat|seamonkey/) {
+			($bhp{browser}, $bhp{profile}) = ($browser, "mozilla/$browser");
+			return 0;
+		} elsif ($browser =~ /conkeror|chrome|chromium|epiphany|midory|opera|otter|qupzilla|netsurf|vivaldi/) {
+			($bhp{browser}, $bhp{profile}) = ($browser, "config/$browser" );
+			return 0;
+		}
 	}
 
 	for my $key (keys %browser) {
-		for my $brw (@{$browser{$key}}) {
-			for my $dir (glob "$ENV{HOME}/.$key/*${brw}*") {
-				if (-d $dir) {
-					($bhp{browser}, $bhp{profile}) = ($brw, "$key/$brw"); return 0;
-				}
+		for $browser (@{$browser{$key}}) {
+			if (-d "$ENV{HOME}/.$key/$browser") {
+				($bhp{browser}, $bhp{profile}) = ($browser, "$key/$browser");
+				return 0;
 			}
 		}
 	}
@@ -318,7 +321,7 @@ sub mozilla_profile {
 
 	my $PFH;
 	open($PFH, q(<), "$ENV{HOME}/.$_[0]/profiles.ini")
-		or pr_die(1, "No firefox profile found");
+		or pr_die(1, "No mozilla profile found");
 	while (<$PFH>) {
 		if (m/path=(.*$)/i) {
 			$bhp{profile} = "$_[0]/$1";
@@ -384,7 +387,7 @@ sub bhp {
 		}
 		unless (-f "$profile$ext" || -f "$profile.old$ext" ) {
 			system('tar', '-X', "$profile/.unpacked", '-cpf', "$profile$ext",
-				'-Hposix', '-I', "$bhp{compressor}", $profile);
+				'-I', "$bhp{compressor}", $profile);
 			if ($?) {
 				pr_end(1, "Tarball");
 				next;
@@ -433,7 +436,7 @@ sub bhp_archive {
 		elsif (-f "$profile.old$ext") { $tarball = "$profile.old$ext" }
 		else {
 			pr_warn("No tarball found.");
-			return 3;
+			next;
 		}
 		system('tar', '-xpf', "$profile$ext", '-I', "$bhp{compressor}", $profile);
 		if ($?) {
