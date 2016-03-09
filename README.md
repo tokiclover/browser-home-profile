@@ -10,18 +10,17 @@ line is supported along with discovering one in the user home directory (first
 found would be used.)
 
 Tarballs archive are used to save user data between session or computer
-shutdown/power-on.
+shutdown/power-on. However, the shell script will setup archive tarballs
+on the first run (no-sourcing). And the python and perl script require
+a `-s' command line argument to do so; otherwise, only temporary directories
+are set up for the profile and cache directories if any.
 
-*Note:* The tarballs can be optional when the shell script is sourced in a shell
-(e.g `~/.{ba,z}shrc`); otherwise a tarball would be set up (saved or restored
-from profile directory.) Sourcing usage can be used to set up a clean and temprary
-profile instead of the usaual tarball set up.
+**Note:** A Gentoo [ebuild](1) is available on this overlay.
 
-(A Gentoo [ebuild](1) is available on this overlay.)
-(This utility is similar to the [profile-sync-daemon](https://github.com/graysky2/profile-sync-daemon)
+**Note:** This utility is similar to the [profile-sync-daemon](https://github.com/graysky2/profile-sync-daemon)
 bash script; but does not rely on the Bourn Shell Again, support others features,
 and more importantly, keep a working cache and profile directory no matter what
-happen unlike psd.)
+happen unlike psd.
 
 USAGE
 -----
@@ -60,13 +59,15 @@ fstab(5) to set up a tmpfs `/tmp`:
 REQUIREMENTS
 ------------
 
-bhp.sh requires a POSIX Shell, tar, sed and a compressor e.g. lzop (default to lz4.)
-bhp.pl requires Perl and the previous archive utilities.
+`bhp.sh` requires a POSIX Shell, tar, sed and a compressor e.g. lzop (default to lz4.)
+`bhp.pl` requires Perl and the previous archive utilities.
+`bhp.py` requires Python 2.7.x or 3.x and the previous archive utilities.
 
 INSTALLATION
 ------------
 
-`make DESTDIR=/tmp PREFIX=/usr/local` would suffice.
+`make DESTDIR=/tmp PREFIX=/usr/local install` would suffice, or, replace
+`install` by `install-perl` or `install-python` for personal convenience.
 
 LICENSE
 -------
