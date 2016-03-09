@@ -3,7 +3,7 @@
 # $Header: bhp.pl                                         Exp $
 # $Author: (c) 2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)          Exp $
-# $Version: 1.2 2016/03/06                                Exp $
+# $Version: 1.2 2016/03/08                                Exp $
 #
 
 use v5.14.0;
@@ -12,18 +12,19 @@ use warnings;
 use File::Temp qw(tempdir);
 use File::Basename;
 use Getopt::Std;
+use POSIX qw(pause);
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 our $VERSION = "1.0";
 
-my(%color, @bg, @fg, %bhp);
-my($PR_COL, $PR_LEN, $PR_EOL) = (tput('cols', 1), 0, "");
-$bhp{color} = 1;
-($bhp{zero}) = $0 =~ m|(?:.*/)?(\w.+)$|g;
-my $name = $bhp{zero};
+my(%color, @bg, @fg, %bhp_info, %print_info);
+($print_info{cols}, $print_info{len}, $print_info{eol}) = (tput('cols', 1), 0, "");
+$print_info{color} = 1;
+($bhp_info{zero}) = $0 =~ m|(?:.*/)?(\w.+)$|g;
+my $name = $bhp_info{zero};
 
 sub HELP_MESSAGE {
 	print <<"EOH"
-Usage: $bhp{zero} [OPTIONS] [BROWSER]
+Usage: $bhp_info{zero} [OPTIONS] [BROWSER]
   -c 'lzop -1'     Use lzop compressor (default to lz4)
   -t DIR           Set up a particular TMPDIR
   -p PROFILE       Select a particular profile
@@ -34,14 +35,14 @@ EOH
 }
 
 sub VERSION_MESSAGE {
-	print "$bhp{zero} version $VERSION\n";
+	print "$bhp_info{zero} version $VERSION\n";
 }
 
 #
 # Handle window resize signal
 #
 sub sigwinch_handler {
-	$PR_COL = tput('cols', 1);
+	$print_info{cols} = tput('cols', 1);
 }
 $SIG{WINCH} = "sigwinch_handler";
 
@@ -109,10 +110,10 @@ Print error message to stderr
 #
 sub pr_error {
 	my($msg, $pfx) = (join ' ', @_);
-	$PR_LEN = length($msg) + length($name) + 2;
+	$print_info{len} = length($msg)+length($name)+2;
 
 	$pfx = "$color{'fg-magenta'}${name}:$color{reset}" if defined($name);
-	print STDERR "$PR_EOL$color{'fg-red'}*$color{reset} $pfx $msg";
+	print STDERR "$print_info{eol}$color{'fg-red'}*$color{reset} $pfx $msg";
 }
 
 =head2 pr_die(err, str)
@@ -141,10 +142,10 @@ Print info message to stdout
 #
 sub pr_info {
 	my($msg, $pfx) = (join ' ', @_);
-	$PR_LEN = length($msg) + length($name) + 2;
+	$print_info{len} = length($msg)+length($name)+2;
 
 	$pfx = "$color{'fg-yellow'}${name}:$color{reset}" if defined($name);
-	print "$PR_EOL$color{'fg-blue'}*$color{reset} $pfx $msg";
+	print "$print_info{eol}$color{'fg-blue'}*$color{reset} $pfx $msg";
 }
 
 =head2 pr_warn(str)
@@ -158,10 +159,10 @@ Print warning message to stdout
 #
 sub pr_warn {
 	my($msg, $pfx) = (join ' ', @_);
-	$PR_LEN = length($msg) + length($name) + 2;
+	$print_info{len} = length($msg)+length($name)+2;
 
 	$pfx = " $color{'fg-red'}${name}:$color{reset}" if defined($name);
-	print STDOUT "$PR_EOL$color{'fg-yellow'}*$color{reset} $pfx $msg";
+	print STDOUT "$print_info{eol}$color{'fg-yellow'}*$color{reset} $pfx $msg";
 }
 
 =head2 pr_begin(str)
@@ -175,9 +176,9 @@ Print the beginning of a formated message to stdout
 #
 sub pr_begin {
 	my($msg, $pfx) = (join ' ', @_);
-	print $PR_EOL if defined($PR_EOL);
-	$PR_EOL = "\n";
-	$PR_LEN = length($msg) + length($name) + 2;
+	print $print_info{eol} if defined($print_info{eol});
+	$print_info{eol} = "\n";
+	$print_info{len} = length($msg)+length($name)+2;
 	$pfx = "${color{'fg-magenta'}}[$color{'fg-blue'}${name}$color{'fg-magenta'}]${color{reset}}"
 		 if defined($name);
 	printf "%s", "$pfx $msg";
@@ -195,7 +196,7 @@ Print the end of a formated message to stdout
 sub pr_end {
 	my($val, $sfx) = (shift);
 	my $msg = (join ' ', @_);
-	my $len = $PR_COL - $PR_LEN;
+	my $len = $print_info{cols} - $print_info{len};
 
 	if ($val == 0) {
 		$sfx="${color{'fg-blue'}}[$color{'fg-green'}Ok$color{'fg-blue'}]$color{reset}";
@@ -203,7 +204,7 @@ sub pr_end {
 		$sfx="${color{'fg-yellow'}}[$color{'fg-red'}No$color{'fg-yellow'}]$color{reset}";
 	}
 	printf "%${len}s\n", "$msg $sfx";
-	($PR_EOL, $PR_LEN) = ();
+	($print_info{eol}, $print_info{len}) = ('', 0);
 }
 
 =head2 yesno([01]|{true|false|etc})
@@ -264,7 +265,7 @@ sub eval_colors {
 #
 # Set up colors
 #
-if (-t STDOUT && yesno($bhp{color})) {
+if (-t STDOUT && yesno($print_info{color})) {
 	eval_colors();
 }
 
@@ -295,10 +296,10 @@ sub find_browser {
 
 	if (defined($browser)) {
 		if ($browser =~ /aurora|firefox|icecat|seamonkey/) {
-			($bhp{browser}, $bhp{profile}) = ($browser, "mozilla/$browser");
+			($bhp_info{browser}, $bhp_info{profile}) = ($browser, "mozilla/$browser");
 			return 0;
 		} elsif ($browser =~ /conkeror|chrome|chromium|epiphany|midory|opera|otter|qupzilla|netsurf|vivaldi/) {
-			($bhp{browser}, $bhp{profile}) = ($browser, "config/$browser" );
+			($bhp_info{browser}, $bhp_info{profile}) = ($browser, "config/$browser" );
 			return 0;
 		}
 	}
@@ -306,7 +307,7 @@ sub find_browser {
 	for my $key (keys %browser) {
 		for $browser (@{$browser{$key}}) {
 			if (-d "$ENV{HOME}/.$key/$browser") {
-				($bhp{browser}, $bhp{profile}) = ($browser, "$key/$browser");
+				($bhp_info{browser}, $bhp_info{profile}) = ($browser, "$key/$browser");
 				return 0;
 			}
 		}
@@ -315,17 +316,18 @@ sub find_browser {
 }
 
 sub mozilla_profile {
-	if ($_[1] && -d "$ENV{HOME}/.$_[0]/$_[1]" ) {
-		$bhp{profile} = "$_[0]/$_[1]"; return 0;
+	my($browser, $profile) = @_;
+	if ($profile and -d "$ENV{HOME}/.$browser/$profile" ) {
+		$bhp_info{profile} = "$browser/$profile"; return 0;
 	}
 
 	my $PFH;
-	open($PFH, q(<), "$ENV{HOME}/.$_[0]/profiles.ini")
+	open($PFH, q(<), "$ENV{HOME}/.$browser/profiles.ini")
 		or pr_die(1, "No mozilla profile found");
 	while (<$PFH>) {
 		if (m/path=(.*$)/i) {
-			$bhp{profile} = "$_[0]/$1";
-			unless (-d "$ENV{HOME}/.$bhp{profile}") {
+			$bhp_info{profile} = "$browser/$1";
+			unless (-d "$ENV{HOME}/.$bhp_info{profile}") {
 				pr_die(2, "No firefox profile dir found");
 			}
 			last;
@@ -347,31 +349,31 @@ sub bhp {
 	if ($opts{h}) { HELP_MESSAGE()   ; exit(0); }
 	if ($opts{v}) { VERSION_MESSAGE(); exit(0); }
 
-	$bhp{browser} = $ARGV[0] // $ENV{BROWSER};
-	$bhp{compressor} =  defined($opts{c}) ? $opts{c} : 'lz4 -1';
-	$ext = '.tar.' . (split /\s/, $bhp{compressor})[0];
+	$bhp_info{browser} = $ARGV[0] // $ENV{BROWSER};
+	$bhp_info{compressor} =  defined($opts{c}) ? $opts{c} : 'lz4 -1';
+	$ext = '.tar.' . (split /\s/, $bhp_info{compressor})[0];
 	$TMPDIR = defined($opts{t}) ? $opts{t} : $ENV{TMPDIR} // "/tmp/$ENV{USER}";
 
 	#
 	# Set up browser and/or profile directory
 	#
-	find_browser($bhp{browser});
-	unless ($bhp{browser}) {
+	find_browser($bhp_info{browser});
+	unless ($bhp_info{browser}) {
 		pr_error("No browser found.");
 		return 1;
 	}
-	if ($bhp{profile} =~ /mozilla/) {
-		mozilla_profile($bhp{profile}, $opts{p});
+	if ($bhp_info{profile} =~ /mozilla/) {
+		mozilla_profile($bhp_info{profile}, $opts{p});
 	}
-	$profile = basename($bhp{profile});
+	$profile = basename($bhp_info{profile});
 
 	#
 	# Set up directories for futur use
 	#
-	$bhp{dirs} = [ "$ENV{HOME}/.$bhp{profile}" ];
-	my $cachedir = $bhp{profile} =~ s|config/||r;
+	$bhp_info{dirs} = [ "$ENV{HOME}/.$bhp_info{profile}" ];
+	my $cachedir = $bhp_info{profile} =~ s|config/||r;
 	$cachedir = "$ENV{HOME}/.cache/$cachedir";
-	push @{$bhp{dirs}}, $cachedir if (-d $cachedir);
+	push @{$bhp_info{dirs}}, $cachedir if (-d $cachedir);
 	unless(-d $TMPDIR || mkdir($TMPDIR, 0700)) {
 		pr_error("No suitable temporary directory found");
 		return 2;
@@ -380,14 +382,14 @@ sub bhp {
 	#
 	# Finaly, set up temporary bind-mount directories
 	#
-	for $dir (@{$bhp{dirs}}) {
+	for $dir (@{$bhp_info{dirs}}) {
 		unless(chdir dirname($dir)) {
 			pr_end(1, "Directory");
 			next;
 		}
 		unless (-f "$profile$ext" || -f "$profile.old$ext" ) {
 			system('tar', '-X', "$profile/.unpacked", '-cpf', "$profile$ext",
-				'-I', "$bhp{compressor}", $profile);
+				'-I', "$bhp_info{compressor}", $profile);
 			if ($?) {
 				pr_end(1, "Tarball");
 				next;
@@ -429,7 +431,7 @@ sub bhp_archive {
 			}
 		}
 		system('tar', '-X', "$profile/.unpacked", '-cpf', "$profile$ext",
-			'-I', "$bhp{compressor}", $profile);
+			'-I', "$bhp_info{compressor}", $profile);
 		pr_end(1, "Packing") if ($?);
 	} else {
 		if    (-f "$profile$ext"    ) { $tarball = "$profile$ext"     }
@@ -438,7 +440,7 @@ sub bhp_archive {
 			pr_warn("No tarball found.");
 			next;
 		}
-		system('tar', '-xpf', "$profile$ext", '-I', "$bhp{compressor}", $profile);
+		system('tar', '-xpf', "$profile$ext", '-I', "$bhp_info{compressor}", $profile);
 		if ($?) {
 			pr_end(1, "Unpacking");
 			return 4;
@@ -451,7 +453,9 @@ sub bhp_archive {
 	pr_end(0);
 }
 
-bhp() if __PACKAGE__ eq "main";
+if (__PACKAGE__ eq "main") {
+	bhp();
+}
 
 __END__
 #
