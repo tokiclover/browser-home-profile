@@ -18,6 +18,10 @@ from profile directory.) Sourcing usage can be used to set up a clean and tempra
 profile instead of the usaual tarball set up.
 
 (A Gentoo [ebuild](1) is available on this overlay.)
+(This utility is similar to the [profile-sync-daemon](https://github.com/graysky2/profile-sync-daemon)
+bash script; but does not rely on the Bourn Shell Again, support others features,
+and more importantly, keep a working cache and profile directory no matter what
+happen unlike psd.)
 
 USAGE
 -----
