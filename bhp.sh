@@ -3,22 +3,19 @@
 # $Header: bhp.sh                                              Exp $
 # $Author: (c) 2012-2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)               Exp $
-# $Version: 1.2 2016/03/08                                     Exp $
+# $Version: 1.2 2016/03/10                                     Exp $
 #
 
-TRAP='trap PRINT_COL="$(tput cols)" WINCH'
 if [ -n "${ZSH_VERSION}" ]; then
 	emulate sh
 	NULLCMD=:
 	setopt SH_WORD_SPLIT
 	setopt EXTENDED_GLOB NULL_GLOB
-	eval "${TRAP}"
 elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs nullglob
 	shopt -qs extglob
-	eval "${TRAP}"
 fi
-unset TRAP
+trap 'PRINT_COL="$(tput cols)"' WINCH
 
 #
 # Setup a few environment variables beforehand
@@ -217,8 +214,8 @@ bhp_message_help()
 {
 	cat <<-EOH
 usage: ${BHP_ZERO} [OPTIONS] [BROWSER]
-  -b, --browser=Web-Browser   Select a browser to set up
   -c, --compressor='lzop -1'  Use lzop compressor, default to lz4
+  -d, --daemon 300            Sync time (in sec) when daemonized
   -t, --tmpdir=DIR            Set up a particular TMPDIR
   -p, --profile=PROFILE       Select a particular profile
   -h, --help                  Print help message and exit
@@ -266,7 +263,7 @@ bhp_init_profile()
 {
 	local ARGS DIR EXT OLD PROFILE browser dir char name="${BHP_ZERO}" tmpdir
 	ARGS="$(getopt \
-		-o b:c:hp:t: -l browser:,compressor:,help,profile:,tmpdir: \
+		-o c:d:hp:t: -l compressor:,daemon:,help,profile:,tmpdir: \
 		-n bhp -s sh -- "${@}")"
 	[ ${?} = 0 ] || return 111
 	eval set -- ${ARGS}
@@ -275,7 +272,7 @@ bhp_init_profile()
 		case "${1}" in
 			(-c|--compressor) BHP_COMPRESSOR="${2}";;
 			(-h|--help) bhp_message_help; return 128;;
-			(-b|--browser) browser="${2}";;
+			(-d|--daemon) BHP_DAEMON="${2}";;
 			(-p|--profile) PROFILE="${2}";;
 			(-t|--tmpdir) tmpdir="${2}";;
 			(*) shift; break;;
@@ -361,8 +358,21 @@ bhp()
 	done
 }
 
+bhp_daemon_loop()
+{
+	while true; do
+		sleep "${BHP_DAEMON}"
+		bhp
+	done
+}
+
 case "${0##*/}" in
-	(bhp*|browser-home-profile*) [ ${BHP_RET} = 0 ] && bhp;;
+	(bhp*|browser-home-profile*)
+		[ ${BHP_RET} = 0 ] && bhp
+		if [ -n "${BHP_DAEMON}" ]; then
+			bhp_daemon_loop "${BHP_DAEMON}"
+		fi
+		;;
 esac
 unset BHP_RET
 
