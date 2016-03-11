@@ -14,7 +14,7 @@ use File::Basename;
 use Getopt::Std;
 use POSIX qw(pause);
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
-our $VERSION = "1.0";
+our $VERSION = "1.2";
 
 my(%color, @bg, @fg, %bhp_info, %print_info, %opts);
 ($print_info{cols}, $print_info{len}, $print_info{eol}) = (tput('cols', 1), 0, "");

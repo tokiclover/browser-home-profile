@@ -44,7 +44,7 @@ HELP_MESSAGE += """
     -v, --version                Print version message                    
 """
 
-VERSION_STRING = "1.0"
+VERSION_STRING = "1.2"
 VERSION_MESSAGE = '%s version %s' % (bhp_info['zero'], VERSION_STRING)
 
 def tput(cap, conv=0):
