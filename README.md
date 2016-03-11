@@ -3,9 +3,9 @@ cache directory. It will put those direcories, if any, to a temporary directory
 (usualy in a tmpfs or zram backed device directory) to minimize disk seeks and 
 improve performance and responsiveness to said web-browser.
 
-Many web-broser are supported out of the box. Namely, aurora, firefox, icecat,
+Many web-browser are supported out of the box. Namely, aurora, firefox, icecat,
 seamonkey (mozilla family), conkeror, chrom{e,ium}, epiphany, midory, opera, otter,
-qupzilla, netsurf, vivaldi. Specifying a particular web-broser on the command
+qupzilla, netsurf, vivaldi. Specifying a particular web-browser on the command
 line is supported along with discovering one in the user home directory (first
 found would be used.)
 
@@ -47,7 +47,7 @@ ENVIRONMENT
 -----------
 
 **BROWSER**
-Set up a default broser to pick when running.
+Set up a default browser to pick when running.
 
 **TMPDIR** (default to `/tmp/$USER`)
 
