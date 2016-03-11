@@ -11,9 +11,9 @@ cache directory. It will put those direcories, if any, to a temporary directory
 (usualy in a tmpfs or zram backed device directory) to minimize disk seeks and 
 improve performance and responsiveness to said web-browser.
 
-Many web-broser are supported out of the box. Namely, aurora, firefox, icecat,
+Many web-browser are supported out of the box. Namely, aurora, firefox, icecat,
 seamonkey (mozilla family), conkeror, chrom, epiphany, midory, opera, otter,
-qupzilla, netsurf, vivaldi. Specifying a particular web-broser on the command
+qupzilla, netsurf, vivaldi. Specifying a particular web-browser on the command
 line is supported along with discovering one in the user home directory (first
 found would be used.)
 
@@ -184,13 +184,10 @@ def find_browser(browser=''):
     }
 
     if browser:
-        if browser in browsers['mozilla']:
-            bhp_info['browser'], bhp_info['profile'] = browser, 'mozilla/%s' % browser
-            return 0
-        elif browser in browsers['config']:
-            bhp_info['browser'], bhp_info['profile'] = browser, 'config/%s' % browser
-            return 0
-
+        for key in browsers:
+            if browser in browsers[key]:
+                bhp_info['browser'], bhp_info['profile'] = browser, key+'/'+browser
+                return 0
     for key in browsers:
         for browser in browsers[key]:
             if os.path.isdir('{0}/.${1}/${2}'.format(os.environ['HOME'], key, browser)):
