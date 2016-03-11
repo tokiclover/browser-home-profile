@@ -30,7 +30,7 @@ import os, os.path, signal, sys, tempfile
 
 bhp_info, color, bg, fg, print_info = dict({}), dict({}), list([]), list([]), dict({})
 print_info['cols'], print_info['len'], print_info['eol'] = 0, 0, ''
-print_info['color'], bhp_info['zero'] = 1, os.path.basename(sys.argv[0])
+bhp_info['zero'] = os.path.basename(sys.argv[0])
 
 HELP_MESSAGE = 'Usage: %s [OPTIONS] [BROWSER]' % bhp_info['zero']
 HELP_MESSAGE += """
@@ -39,6 +39,7 @@ HELP_MESSAGE += """
     -t, --tmpdir DIR             Set up a particular TMPDIR
     -p, --profiel PROFILE        Select a particular profile
     -s, --set                    Set up tarball archives
+    -C, --nocolor                Disable colored output
     -h, --help                   Print help message
     -v, --version                Print version message                    
 """
@@ -164,23 +165,6 @@ def eval_colors():
     for (i, c) in enumerate(bc):
         color['bg-{0}'.format(c)] = '%s%s%sm' % (ESC, BG, i)
         color['fg-{0}'.format(c)] = '%s%s%sm' % (ESC, FG, i)
-
-#
-# Set up colors
-#
-if sys.stdout.isatty() and yesno(print_info['color']):
-    eval_colors()
-else :
-    color = { c: '' for i in ['none', 'bold', 'faint', 'italic', 'underline', 'blink',
-        'rapid-blink', 'inverse', 'conceal', 'no-italic', 'no-underline',
-        'no-blink', 'reveal', 'default',
-        'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white']
-    }
-if sys.version[0] == 3:
-    print_info['cols'] = os.get_terminal_size()[0]
-else :
-    print_info['cols'] = tput('cols', 1)
-
 
 def mount_info(dir):
     """A tiny helper to simplify probing mounted points"""
@@ -330,6 +314,11 @@ def sigalrm_handler(sig=signal.SIGALRM, frame=None):
                 bhp_info['profile'].split('/')[-1])
 signal.signal(signal.SIGALRM, sigalrm_handler)
 
+if sys.version[0] == 3:
+    print_info['cols'] = os.get_terminal_size()[0]
+else:
+    print_info['cols'] = tput('cols', 1)
+
 if __name__ == '__main__':
     bhp_info['browser'], bhp_info['compressor'] = '', 'lz4 -1'
     profile, setup, name, bhp_info['daemon'] = '', False, bhp_info['zero'], 0
@@ -339,12 +328,17 @@ if __name__ == '__main__':
         TMPDIR = '/tmp/%s' % os.environ['USER']
     else:
         TMPDIR = '/tmp'
+    if 'PRINT_COLOR' in os.environ:
+        print_info['color'] = os.environ['PRINT_COLOR']
+    else: print_info['color'] = 1
+
     #
     # Set up options according to command line options
     #
     import getopt, re
-    shortopts = 'c:d:hp:st:v'
-    longopts  = ['compressor=', 'daemon=', 'help', 'profile=', 'set', 'tmpdir=', 'version']
+    shortopts = 'Cc:d:hp:st:v'
+    longopts  = ['compressor=', 'daemon=', 'noclor', 'help', 'profile=', 'set',
+            'tmpdir=', 'version']
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError:
@@ -368,11 +362,25 @@ if __name__ == '__main__':
             TMPDIR = arg
         if opt in ['-d', '--daemon=']:
             bhp_info['daemon'] = arg
+        if opt in ['-C', '--nocolor']:
+            print_info['color'] = 0
 
     if len(args):
         bhp_info['browser'] = args[0]
     elif 'BROWSER' in os.environ:
         bhp_info['browser'] = os.environ['BROWSER']
+
+    #
+    # Set up colors
+    #
+    if sys.stdout.isatty() and yesno(print_info['color']):
+        eval_colors()
+    else:
+        color = { c: '' for i in ['none', 'bold', 'faint', 'italic', 'underline', 'blink',
+            'rapid-blink', 'inverse', 'conceal', 'no-italic', 'no-underline',
+            'no-blink', 'reveal', 'default',
+            'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white']
+        }
 
     #
     # Finally, launch the setup helper
