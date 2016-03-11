@@ -239,7 +239,7 @@ sub yesno {
 	}
 }
 
-=head2 eval_colors
+=head2 eval_colors()
 
 Set up colors for output for the print helper family if stdout is a tty
 
@@ -259,7 +259,7 @@ sub eval_colors {
 	$color{'reset'} = "${esc}0m";
 
 	if (tput('colors', 1) >= 256) {
-		($bg, $fg, $num) = ('48;5;', '38;5;', 256);
+		($bg, $fg, $num) = ('48;5;', '38;5;', 255);
 	} else {
 		($bg, $fg, $num) = (4, 3, 8);
 	}
