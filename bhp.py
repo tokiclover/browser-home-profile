@@ -322,15 +322,8 @@ else:
 if __name__ == '__main__':
     bhp_info['browser'], bhp_info['compressor'] = '', 'lz4 -1'
     profile, setup, name, bhp_info['daemon'] = '', False, bhp_info['zero'], 0
-    if 'TMPDIR' in os.environ:
-        TMPDIR = os.environ['TMPDIR']
-    elif 'USER' in os.environ:
-        TMPDIR = '/tmp/%s' % os.environ['USER']
-    else:
-        TMPDIR = '/tmp'
-    if 'PRINT_COLOR' in os.environ:
-        print_info['color'] = os.environ['PRINT_COLOR']
-    else: print_info['color'] = 1
+    TMPDIR = os.environ.get('TMPDIR', '/tmp/' + os.environ['USER'])
+    print_info['color'] = os.environ.get('PRINT_COLOR', 1)
 
     #
     # Set up options according to command line options
@@ -365,19 +358,14 @@ if __name__ == '__main__':
         if opt in ['-C', '--nocolor']:
             print_info['color'] = 0
 
-    if len(args):
-        bhp_info['browser'] = args[0]
-    elif 'BROWSER' in os.environ:
-        bhp_info['browser'] = os.environ['BROWSER']
-
     #
     # Set up colors
     #
     if sys.stdout.isatty() and yesno(print_info['color']):
         eval_colors()
     else:
-        color = { c: '' for i in ['none', 'bold', 'faint', 'italic', 'underline', 'blink',
-            'rapid-blink', 'inverse', 'conceal', 'no-italic', 'no-underline',
+        color = { i: '' for i in ['none', 'bold', 'faint', 'italic', 'underline',
+            'blink', 'rapid-blink', 'inverse', 'conceal', 'no-italic', 'no-underline',
             'no-blink', 'reveal', 'default',
             'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white']
         }
@@ -385,6 +373,7 @@ if __name__ == '__main__':
     #
     # Finally, launch the setup helper
     #
+    bhp_info['browser'] = args[0] or os.environ.get('BROWSER', '')
     bhp(profile=profile,setup=setup)
     if bhp_info['daemon']: bhp_daemon(bhp_info['daemon'])
 
