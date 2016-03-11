@@ -75,9 +75,9 @@ cache directory. It will put those direcories, if any, to a temporary directory
 (usualy in a tmpfs or zram backed device directory) to minimize disk seeks and 
 improve performance and responsiveness to said web-browser.
 
-Many web-broser are supported out of the box. Namely, aurora, firefox, icecat,
+Many web-browser are supported out of the box. Namely, aurora, firefox, icecat,
 seamonkey (mozilla family), conkeror, chrom{e,ium}, epiphany, midory, opera, otter,
-qupzilla, netsurf, vivaldi. Specifying a particular web-broser on the command
+qupzilla, netsurf, vivaldi. Specifying a particular web-browser on the command
 line is supported along with discovering one in the user home directory (first
 found would be used.)
 
@@ -301,12 +301,11 @@ sub find_browser {
 	);
 
 	if (defined($browser)) {
-		if ($browser =~ /aurora|firefox|icecat|seamonkey/) {
-			($bhp_info{browser}, $bhp_info{profile}) = ($browser, "mozilla/$browser");
-			return 0;
-		} elsif ($browser =~ /conkeror|chrome|chromium|epiphany|midory|opera|otter|qupzilla|netsurf|vivaldi/) {
-			($bhp_info{browser}, $bhp_info{profile}) = ($browser, "config/$browser" );
-			return 0;
+		for my $key (keys %browser) {
+			if (grep { $_ eq $browser } @{$browser{$key}}) {
+				($bhp_info{browser}, $bhp_info{profile}) = ($browser, $key . "/" . $browser);
+				return 0;
+			}
 		}
 	}
 
