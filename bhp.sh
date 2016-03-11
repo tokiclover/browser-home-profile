@@ -25,18 +25,6 @@ case "${0##*/}" in
 	(bhp*|browser-home-profile*) BHP_ZERO="${0##*/}";;
 	(*) BHP_ZERO=bhp;;
 esac
-
-if command -v printf &>NULL; then
-	PRINTF()
-	{
-		printf "%*b\n" "${PRINT_LEN}" "${*}"
-	}
-else
-	PRINTF()
-	{
-		echo -e "${*}"
-	}
-fi
 PRINT_COL="$(tput cols)"
 
 #
@@ -98,7 +86,7 @@ pr_end()
 	esac
 	shift
 	PRINT_LEN=$((${PRINT_COL}-${PRINT_LEN}))
-	PRINTF "${@} ${suffix}"
+	printf "%*b\n" "${PRINT_LEN}" "${@} ${suffix}"
 	PRINT_EOL=
 	PRINT_LEN=0
 }
