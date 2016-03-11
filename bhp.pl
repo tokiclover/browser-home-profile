@@ -16,10 +16,9 @@ use POSIX qw(pause);
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 our $VERSION = "1.0";
 
-my(%color, @bg, @fg, %bhp_info, %print_info);
+my(%color, @bg, @fg, %bhp_info, %print_info, %opts);
 ($print_info{cols}, $print_info{len}, $print_info{eol}) = (tput('cols', 1), 0, "");
-$print_info{color} = 1;
-($bhp_info{zero}) = $0 =~ m|(?:.*/)?(\w.+)$|g;
+$bhp_info{zero} = basename($0);
 my $name = $bhp_info{zero};
 
 sub HELP_MESSAGE {
@@ -30,6 +29,7 @@ Usage: $bhp_info{zero} [OPTIONS] [BROWSER]
   -t DIR           Set up a particular TMPDIR
   -p PROFILE       Select a particular profile
   -s               Set up tarball archives
+  -C               Disable colored output
   -h, --help       Print help message
   -v, --version    Print version message          
 EOH
@@ -274,12 +274,6 @@ sub eval_colors {
 		$color{"fg-$bc[$c]"} = "$esc$fg${c}m";
 	}
 }
-#
-# Set up colors
-#
-if (-t STDOUT && yesno($print_info{color})) {
-	eval_colors();
-}
 
 =head2 mount_info (dir)
 
@@ -352,18 +346,7 @@ sub mozilla_profile {
 # Use a private initializer function
 #
 sub bhp {
-	my($char, $dir, $ext, $head, $profile, $TMPDIR, $tmpdir, %opts);
-
-	#
-	# Set up options according to command line options
-	#
-	getopts('c:d:hp:st:v', \%opts) or die "Failed to process options";
-	if ($opts{h}) { HELP_MESSAGE()   ; exit(0); }
-	if ($opts{v}) { VERSION_MESSAGE(); exit(0); }
-
-	$bhp_info{daemon} = $opts{d} // 0;
-	$bhp_info{browser} = $ARGV[0] // $ENV{BROWSER};
-	$bhp_info{compressor} =  defined($opts{c}) ? $opts{c} : 'lz4 -1';
+	my($char, $dir, $ext, $head, $profile, $TMPDIR, $tmpdir);
 	$ext = '.tar.' . (split /\s/, $bhp_info{compressor})[0];
 	$TMPDIR = defined($opts{t}) ? $opts{t} : $ENV{TMPDIR} // "/tmp/$ENV{USER}";
 
@@ -478,6 +461,24 @@ sub bhp_daemon {
 }
 
 if (__PACKAGE__ eq "main") {
+	#
+	# Set up options according to command line options
+	#
+	getopts('Cc:d:hp:st:v', \%opts) or die "Failed to process options";
+	if ($opts{h}) { HELP_MESSAGE()   ; exit(0); }
+	if ($opts{v}) { VERSION_MESSAGE(); exit(0); }
+	$bhp_info{daemon} = $opts{d} // 0;
+	$bhp_info{browser} = $ARGV[0] // $ENV{BROWSER};
+	$bhp_info{compressor} =  defined($opts{c}) ? $opts{c} : 'lz4 -1';
+	$print_info{color} = $opts{C} // $ENV{PRINT_COLOR} // 1;
+
+	#
+	# Set up colors
+	#
+	if (-t STDOUT && yesno($print_info{color})) {
+		eval_colors();
+	}
+
 	bhp();
 	bhp_daemon() if $bhp_info{daemon};
 }
