@@ -126,6 +126,9 @@ INSTALLATION
 
 # Perl scripts
 
+`perl Makefile.PL; make -f Makefile_PL install DESTDIR=/tmp INSTALLDIRS=vendor`
+would suffice.
+
 # Python scripts
 
 `python setup.py install --root /tmp --compile` would suffice.
