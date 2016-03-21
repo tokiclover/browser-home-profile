@@ -1,0 +1,9 @@
+_build/*
+blib/*
+__pycache__/*
+*.pyc
+build/*
+tmpdir/*.pyc
+tmpdir/*.pyo
+tmpdir/__pycache__/*
+tmpdir.egg-info/*
