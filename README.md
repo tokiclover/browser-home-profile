@@ -9,7 +9,7 @@ Read the following section for more on the description and usage of the utilitie
 DESCRIPTION
 -----------
 
-# bhp.EXTENSION (browser-home-profile)
+### bhp.EXTENSION (browser-home-profile)
 
 This utility manage web-browser home profile directory along with the associated
 cache directory. It will put those direcories, if any, to a temporary directory
@@ -35,7 +35,7 @@ happen unlike psd.
 with some arguments or none for atomatic setup; and the subsequent `bhp` command
 would keep updating the tarball.
 
-# tmpdirs.EXTENSION
+### tmpdirs.EXTENSION
 
 This utility is used to setup temporary directory stack upon the usual tmpfs
 or on top of ZRAM, if supported, for efficient RAM space usage.
@@ -57,7 +57,7 @@ files for the Perl and/or Python variant.
 USAGE
 -----
 
-# bhp.EXTENSION (browser-home-profile)
+### bhp.EXTENSION (browser-home-profile)
 
 Many browser are supported out of the box, see the script for an extensive list;
 or else appending a (supported) browser name on the command line to select a
@@ -78,7 +78,7 @@ lone script.
 
 *Warning:* Sourcing capabilities are only relevant for the shell script.
 
-# tmpdirs.EXTENSION
+### tmpdirs.EXTENSION
 
     `tmpdirs.EXTENSION '1G swap' '4G ext4 /var/tmp 1777 user_xattr'` to setup two devices.
 	`tmpdirs.EXTENSION --tmpdir-prefix=/var/tmp --tmpdir-saved=/var/log` to setup
@@ -88,55 +88,50 @@ lone script.
 ENVIRONMENT
 -----------
 
-# bhp.EXTENSION (browser-home-profile)
+### bhp.EXTENSION (browser-home-profile)
 
 **BROWSER**
 Set up a default browser to pick when running.
 
 **TMPDIR** (default to `/tmp/$USER`)
 
-Set up tmpfs directory to use using something like the following in
-fstab(5) to set up a tmpfs `/tmp`:
-
-	tmp /tmp tmpfs nodev,exec,mode=1777,size=512M 0 0
-
-# tmpdirs.EXTENSION
+### tmpdirs.EXTENSION
 
 None
 
 REQUIREMENTS
 ------------
 
-# bhp.EXTENSION (browser-home-profile)
+### bhp.EXTENSION (browser-home-profile)
 
 `bhp.sh` requires a POSIX Shell, tar, sed and a compressor e.g. lzop (default to lz4.)
 `bhp.pl` requires Perl and the previous archive utilities.
 `bhp.py` requires Python 2.7.x or 3.x and the previous archive utilities.
 
-# tmpdirs.EXTENSION
+### tmpdirs.EXTENSION
 
 Same as above for `tmpdirs.p{l,y}` scripts.
 
 INSTALLATION
 ------------
 
-# Shell scripts
+### Shell scripts
 
 `make DESTDIR=/tmp PREFIX=/usr/local install` would suffice.
 
-# Perl scripts
+### Perl scripts
 
 `perl Makefile.PL; make -f Makefile_PL install DESTDIR=/tmp INSTALLDIRS=vendor`
 would suffice.
 
-# Python scripts
+### Python scripts
 
 `python setup.py install --root /tmp --compile` would suffice.
 
 LICENSE
 -------
 
-Distributed under MOIT or the 2-clause/new/simplifed BSD License
+Distributed under MIT or the 2-clause/new/simplifed BSD License
 
 [1]: https://github.com/tokiclover/bar-overlay
 [2]: https://github.com/tokiclover/mkinitramfs-ll/tree/master/svc
