@@ -2,7 +2,10 @@ PACKAGE     = browser-home-profile
 VERSION     = $(shell sed -nre '3s/(.*):/\1/p' ChangeLog)
 
 PREFIX      = /usr/local
+EXEC_PREFIX = $(PREFIX)
 BINDIR      = $(PREFIX)/bin
+SBINDIR     = $(EXEC_PREFIX)/sbin
+LIBDIR      = $(EXEC_PREFIX)/lib
 DATADIR     = $(PREFIX)/share
 DOCDIR      = $(DATADIR)/doc
 MANDIR      = $(DATADIR)/man
@@ -20,7 +23,7 @@ dist_EXTRA  = \
 
 DISTFILES   = $(dist_EXTRA)
 dist_DIRS  += \
-	$(BINDIR) $(DOCDIR)/$(PACKAGE)-$(VERSION)
+	$(SBINDIR) $(BINDIR) $(DOCDIR)/$(PACKAGE)-$(VERSION) $(LIBDIR)/tmpdir/sh
 DISTDIRS    = $(dist_DIRS)
 
 FORCE:
@@ -30,11 +33,12 @@ FORCE:
 all:
 
 install: install-dir install-dist
-	$(install_SCRIPT) bhp.sh $(DESTDIR)$(BINDIR)/
-install-perl: install-dir install-dist
-	$(install_SCRIPT) bhp.pl $(DESTDIR)$(BINDIR)/
-install-python: install-dir install-dist
-	$(install_SCRIPT) bhp.py $(DESTDIR)$(BINDIR)/
+	$(install_SCRIPT) bhp.sh     $(DESTDIR)$(BINDIR)/
+	$(install_SCRIPT) tmpdirs.sh $(DESTDIR)$(SBINDIR)/
+	$(install_DATA) sh/functions.sh $(DESTDIR)$(LIBDIR)/tmpdir/sh
+	sed -e 's:"\$${0%/\*}":"$(LIBDIR)":g' -i \
+		$(DESTDIR)$(SBINDIR)/tmpdirs.sh \
+		$(DESTDIR)$(BINDIR)/bhp.sh
 install-dist: $(DISTFILES)
 install-dir :
 	$(MKDIR_P) $(dist_DIRS:%=$(DESTDIR)%)
