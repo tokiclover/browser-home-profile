@@ -1,0 +1,7 @@
+MANIFEST
+Makefile.PL
+README.md
+bhp.pl
+tmpdirs.pl
+lib/File/Tmpdir.pm
+lib/File/Tmpdir/Functions.pm
