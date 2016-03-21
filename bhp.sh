@@ -3,124 +3,13 @@
 # $Header: bhp.sh                                              Exp $
 # $Author: (c) 2012-2016 tokiclover <tokiclover@gmail.com>     Exp $
 # $License: MIT (or 2-clause/new/simplified BSD)               Exp $
-# $Version: 1.2 2016/03/10                                     Exp $
+# $Version: 1.4 2016/03/20                                     Exp $
 #
 
-if [ -n "${ZSH_VERSION}" ]; then
-	emulate sh
-	NULLCMD=:
-	setopt SH_WORD_SPLIT
-	setopt EXTENDED_GLOB NULL_GLOB
-elif [ -n "${BASH_VERSION}" ]; then
-	shopt -qs nullglob
-	shopt -qs extglob
-fi
-trap 'PRINT_COL="$(tput cols)"' WINCH
-
-#
-# Setup a few environment variables beforehand
-#
-NULL=/dev/null
-case "${0##*/}" in
-	(bhp*|browser-home-profile*) BHP_ZERO="${0##*/}";;
-	(*) BHP_ZERO=bhp;;
-esac
-PRINT_COL="$(tput cols)"
-
-#
-# @FUNCTION: Print error message to stderr
-#
-pr_error()
-{
-	local PFX="${name:+${CLR_MAG}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_RED}*${CLR_RST} ${PFX} ${@}" >&2
-}
-
-#
-# @FUNCTION: Print error message to stderr & exit
-#
-die()
-{
-	local ret=${?}; pr_error "${@}"; exit ${ret}
-}
-
-#
-# @FUNCTION: Print info message to stdout
-#
-pr_info()
-{
-	local PFX="${name:+${CLR_YLW}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_BLU}*${CLR_RST} ${PFX} ${@}"
-}
-
-#
-# @FUNCTION: Print warn message to stdout
-#
-pr_warn()
-{
-	local PFX="${name:+${CLR_RED}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_YLW}*${CLR_RST} ${PFX} ${@}"
-}
-
-#
-# @FUNCTION: Print begin message to stdout
-#
-pr_begin()
-{
-	echo -en "${PRINT_EOL}"
-	PRINT_EOL="\n"
-	PRINT_LEN=$((${#name}+3+${#*}))
-	local PFX="${name:+${CLR_MAG}[${CLR_BLU}${name}${CLR_MAG}]${CLR_RST}}"
-	echo -en "${PFX} ${@}"
-}
-
-#
-# @FUNCTION: Print end message to stdout
-#
-pr_end()
-{
-	local suffix
-	case "${1-0}" in
-		(0) suffix="${CLR_BLU}[${CLR_GRN}Ok${CLR_BLU}]${CLR_RST}";;
-		(*) suffix="${CLR_YLW}[${CLR_RED}No${CLR_YLW}]${CLR_RST}";;
-	esac
-	shift
-	PRINT_LEN=$((${PRINT_COL}-${PRINT_LEN}))
-	printf "%*b\n" "${PRINT_LEN}" "${@} ${suffix}"
-	PRINT_EOL=
-	PRINT_LEN=0
-}
-
-#
-# @FUNCTION: YES or NO helper
-#
-yesno()
-{
-	case "${1:-NO}" in
-	(0|[Dd][Ii][Ss][Aa][Bb][Ll][Ee]|[Oo][Ff][Ff]|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
-		return 1;;
-	(1|[Ee][Nn][Aa][Bb][Ll][Ee]|[Oo][Nn]|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
-		return 0;;
-	(*)
-		return 2;;
-	esac
-}
-
-# @FUNCTION: Colors handler
-#
-eval_colors()
-{
-	local BLD ESC FGD clr
-	BLD='1;' ESC='\e[' FGD='3'
-
-	for clr in 0:BLK 1:RED 2:GRN 3:YLW 4:BLU 5:MAG 6:CYN 7:WHT; do
-		eval CLR_${clr#*:}="'${ESC}${BLD}${FGD}${clr%:*}m'"
-	done
-	CLR_RST="${ESC}0m"
-}
-
-if [ -t 1 ] && yesno "${PRINT_COLOR:-Yes}"; then
-	eval_colors
+TMPDIR_LIBDIR="${0%/*}"
+if ! source "${TMPDIR_LIBDIR}"/sh/functions.sh; then
+	echo "Failed to load functions.sh" >&2
+	exit 1;
 fi
 
 mktmp_message_help()
@@ -141,7 +30,7 @@ mktmp()
 {
 	[ ${#} = 0 ] && { mktmp_message_help; return 1; }
 
-	local ARGS name=mktmp
+	local ARGS NAME=mktmp
 	ARGS="$(getopt \
 		-o dfg:hm:o:p: \
 		-l dir,file,group:,tmpdir:,help,mode:owner: \
@@ -174,9 +63,9 @@ mktmp()
 		(*) pr_error "Invalid TEMPLATE"; return 4;;
 	esac
 	local mktmp
-	if type -p mktemp >${NULL} 2>&1; then
+	if type -p mktemp >/dev/null 2>&1; then
 		mktmp=mktemp
-	elif type -p busybox >${NULL} 2>&1; then
+	elif type -p busybox >/dev/null 2>&1; then
 		mktmp='busybox mktemp'
 	fi
 	if [ -n "${mktmp}" ]; then
@@ -206,10 +95,14 @@ usage: ${BHP_ZERO} [OPTIONS] [BROWSER]
   -d, --daemon 300            Sync time (in sec) when daemonized
   -t, --tmpdir=DIR            Set up a particular TMPDIR
   -p, --profile=PROFILE       Select a particular profile
+  -s, --set                   Set up tarball archives
   -h, --help                  Print help message and exit
 EOH
 }
 
+#
+# @FUNCTION: Find a browser to setup
+#
 bhp_find_browser()
 {
 	local BROWSERS MOZ_BROWSERS group browser
@@ -233,6 +126,9 @@ bhp_find_browser()
 	return 1
 }
 
+#
+# @FUNCTION: Find a Mozilla family browser profile
+#
 bhp_mozilla_profile()
 {
 	[ -n "${2}" -a -d "${HOME}/.${1}/${2}" ] &&
@@ -245,27 +141,29 @@ bhp_mozilla_profile()
 }
 
 #
-# Use a private initializer function
+# @FUNCTION: Profile initializer function and temporary directories setup
 #
 bhp_init_profile()
 {
-	local ARGS DIR EXT OLD PROFILE browser dir char name="${BHP_ZERO}" tmpdir
+	local ARGS DIR EXT OLD PROFILE browser dir char NAME="${BHP_ZERO}" tmpdir
+	local SETUP_TARBALL=false
 	ARGS="$(getopt \
-		-o c:d:hp:t: -l compressor:,daemon:,help,profile:,tmpdir: \
+		-o c:d:hp:st: -l compressor:,daemon:,help,profile:,set,tmpdir: \
 		-n bhp -s sh -- "${@}")"
 	[ ${?} = 0 ] || return 111
 	eval set -- ${ARGS}
 
 	while true; do
 		case "${1}" in
-			(-c|--compressor) BHP_COMPRESSOR="${2}";;
-			(-h|--help) bhp_message_help; return 128;;
-			(-d|--daemon) BHP_DAEMON="${2}";;
-			(-p|--profile) PROFILE="${2}";;
-			(-t|--tmpdir) tmpdir="${2}";;
+			(-c|--compressor) BHP_COMPRESSOR="${2}"; shift;;
+			(-h|--help) bhp_message_help   ; return 128;;
+			(-d|--daemon) BHP_DAEMON="${2}"; shift;;
+			(-p|--profile) PROFILE="${2}"  ; shift;;
+			(-t|--tmpdir) tmpdir="${2}"    ; shift;;
+			(-s|--set) SET_TARBALL=true   ;;
 			(*) shift; break;;
 		esac
-		shift 2
+		shift
 	done
 
 	bhp_find_browser "${browser:-${1:-$BROWSER}}"
@@ -285,44 +183,49 @@ bhp_init_profile()
 
 	for dir in "${HOME}"/.${BHP_PROFILE} "${HOME}"/.cache/${BHP_PROFILE#config/}; do
 		[ -d "${dir}" ] || continue
-		grep -q "${dir}" /proc/mounts && continue
+		if mount_info "${dir}"; then
+			${SET_TARBALL} && bhp ${dir}
+			continue
+		fi
 		OLD="${PWD}"
+		cd "${dir%/*}" || { pr_end 1 Directory; continue; }
 
 		pr_begin "Setting up directory... "
-		cd "${dir%/*}" || { pr_end 1 Directory; continue; }
 		if [ ! -f "${PROFILE}${EXT}" ] || [ ! -f "${PROFILE}.old${EXT}" ]; then
 			tar -cpf ${PROFILE}${EXT}  -I "${BHP_COMPRESSOR}" ${PROFILE} ||
 				{ pr_end 1 Tarball; continue; }
 		fi
-		cd "${OLD}"
 
 		case "${dir}" in
 			(*.cache/*) char=c;;
 			(*) char=p;;
 		esac
 		DIR="$(mktmp -p "${tmpdir}" -d bh${char}-XXXXXX)"
-		sudo mount --bind "${DIR}" "${dir}" 2>${NULL} ||
+		sudo mount --bind "${DIR}" "${dir}" ||
 			{ pr_end 1 Mounting; continue; }
 		pr_end "${?}"
+
+		if ${SET_TARBALL}; then
+			bhp ${dir}
+		fi
+		cd "${OLD}"
 	done
 }
-bhp_init_profile "${@}"
-BHP_RET="${?}"
 
 #
 # @FUNCTION: Maintain BHP archive tarballs
 #
 bhp()
 {
-	local EXT OLD PROFILE name=bhp tarball
+	local EXT OLD PROFILE NAME=bhp tarball
 	EXT=".tar.${BHP_COMPRESSOR%% *}" PROFILE="${BHP_PROFILE##*/}"
 
-	for dir in "${HOME}"/.${BHP_PROFILE} "${HOME}"/.cache/${BHP_PROFILE#config/}; do
+	for dir in ${@:-"${HOME}"/.${BHP_PROFILE} "${HOME}"/.cache/${BHP_PROFILE#config/}}; do
 		[ -d "${dir}" ] || continue
 		OLD="${PWD}"
+		cd "${dir%/*}" || continue
 
 		pr_begin "Setting up tarball... "
-		cd "${dir%/*}" || continue
 		if [ -f ${PROFILE}/.unpacked ]; then
 			if [ -f ${PROFILE}${EXT} ]; then
 				mv -f ${PROFILE}${EXT} ${PROFILE}.old${EXT} ||
@@ -338,7 +241,7 @@ bhp()
 			else
 				pr_warn "No tarball found."; continue
 			fi
-			tar -xpf ${PROFILE}${EXT}  -I "${BHP_COMPRESSOR}" ${PROFILE} &&
+			tar -xpf ${PROFILE}${EXT}  -I "${BHP_COMPRESSOR}" &&
 				touch ${PROFILE}/.unpacked || { pr_end 1 Unpacking; continue; }
 		fi
 		pr_end "${?}"
@@ -346,6 +249,9 @@ bhp()
 	done
 }
 
+#
+# @FUNCTION: Simple function to handle syncing the tarball archive to disk
+#
 bhp_daemon_loop()
 {
 	while true; do
@@ -356,13 +262,17 @@ bhp_daemon_loop()
 
 case "${0##*/}" in
 	(bhp*|browser-home-profile*)
-		[ ${BHP_RET} = 0 ] && bhp
-		if [ -n "${BHP_DAEMON}" ]; then
+		BHP_ZERO="${0##*/}"
+		if [ -t 1 ] && yesno "${PRINT_COLOR:-Yes}"; then
+			eval_colors
+		fi
+		bhp_init_profile "${@}"
+		if [ -n "${BHP_DAEMON}" -a "${?}" = 0 ]; then
 			bhp_daemon_loop "${BHP_DAEMON}"
 		fi
 		;;
+	(*) NAME="bhp";;
 esac
-unset BHP_RET
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=2:sw=2:ts=2:
