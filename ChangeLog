@@ -1,5 +1,27 @@
 Header: browser-home-profile/ChangeLog, 2015/04/24
 
+4.0:
+
+Added tmpdirs.{sh,py,pl} (Temporary directory setup with ZRAM support);
+after spliting the common helpers to:
+	- sh/functions.sh for the Shell variant;
+	- tmpdir/functions.py for the Python variant;
+	- lib/File/Tmpdir/Functions.pm the Perl variant.
+And then added modules... for Temporary Directory setup (with ZRAM support):
+	- lib/File/Tmpdir.pm for the Perl variant;
+	- tmpdir/__init__.py for the Python variant.
+
+And then, version bumped bhp.{sh,py,pl} scripts to use the new module or
+functions file.
+
+3.2:
+
+Tniy bug fixes and added -C|--nocolor switch to bhp.p{l,y}.
+
+3.1:
+
+Added Python and Perl variant to bhp.sh.
+
 2.1:
 
 Update print-helper format string to get a nice output format;
