@@ -359,6 +359,105 @@ sub read_or_write {
 	}
 }
 
+=head1 METHODS
+
+To create a 1GB swap device on top of zram using methods (instead of function
+calls.)
+
+    my $swp = File::Tmpdir->new(device => "1G swap");
+    $swp->setup();
+
+To create tmpfs temporary directory hierarchy object.
+
+    my $tmp = File::Tmpdir->new(prefix => "/var/tmp");
+    $tmp->setup(size => "2G");
+
+=cut
+
+=head2 new(OPTIONS)
+
+Constructor method; note that, using C<compressor> key setting will confuse
+the object and try to set up either zram or tmpfs with a tiny cost.
+
+=cut
+
+sub new {
+	my $invocant = shift;
+	my %ARGS = @_;
+	my $class = ref($invocant) || $invocant;
+	my $self = {};
+	bless ($self, $class);
+
+	if (@_) {
+		while (my ($key, $value) = each %ARGS) {
+			$self->setattr($key, $value);
+		}
+	}
+	return $self;
+}
+
+=head2 setup(OPTIONS)
+
+Setup method build on top of C<tmpdir_setup()> and C<zram_setup()> subroutines,
+so, passing extra arguments is totally permissible when setting up the device.
+
+=cut
+
+sub setup {
+	my $self = shift;
+	my %ARGS = @_;
+	if (@_) {
+		while (my ($key, $value) = each %ARGS) {
+			$self->setattr($key, $value);
+		}
+	}
+	  zram_setup(%$self) if exists $self->{device};
+	tmpdir_setup(%$self) if exists $self->{prefix};
+}
+
+=head2 delattr('attr')
+
+Delete an attribute of an object.
+
+=cut
+
+sub delattr {
+	my ($self, $attr) = @_;
+	if (exists $self->{$attr}) {
+		delete $self->{$attr};
+	}
+}
+
+=head2 getattr(attr)
+
+Retrieve the setted attributes of the objest.
+
+    $obj->getattr('compressor');
+
+=cut
+
+sub getattr {
+	my ($self, $attr) = (shift);
+	if (exists $self->{$attr}) {
+		return $self->{$attr};
+	}
+	else { pr_warn("No valid attribute '$attr' in object") }
+}
+
+=head2 setattr(attr => 'value')
+
+Set an attribute of an object.
+
+=cut
+
+sub setattr {
+	my ($self, $attr, $value) = @_;
+	if ($attr eq 'prefix' or $attr eq 'device'
+			or defined $zram{$attr} or defined $tmpdir{$attr}) {
+		$self->{$attr} = $value;
+	}
+}
+
 1;
 __END__
 
