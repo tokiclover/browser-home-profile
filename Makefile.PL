@@ -16,9 +16,7 @@ WriteMakefile(
 		'ExtUtils::MakeMaker' => 6.56,
 	},
 	EXE_FILES          => [ qw(bhp.pl tmpdirs.pl) ],
-	FIRST_MAKEFILE     => 'Makefile_PL',
 	MAN1PODS           => {},
-	MAN3PODS           => {},
 	PM                 => {
 		'lib/File/Tmpdir.pm'           => '$(INST_LIB)/File/Tmpdir.pm',
 		'lib/File/Tmpdir/Functions.pm' => '$(INST_LIB)/File/Tmpdir/Functions.pm',
