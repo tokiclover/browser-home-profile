@@ -72,7 +72,7 @@ def read_or_write(file, mode='r', *PARGS):
 
 #------------------------------------------------------ TMPDIR FUNCTIONS
 def tmpdir_init(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
-        saved=None):
+        saved=None, **KARGS):
     """Intialize a temporary directory hierarchy by mounting the prefix directory.
 
     tmpdir.tmpdir_init(compressor="lz4 -1", saved=["/var/log"])"""
@@ -163,7 +163,7 @@ def zram_reset(*PARGS):
             ret += 1
     return ret
 
-def zram_init(boot_setup=ZRAM['boot_setup'], num_dev=ZRAM['num_dev']):
+def zram_init(boot_setup=ZRAM['boot_setup'], num_dev=ZRAM['num_dev'], **KARGS):
     """Setup low level details and initialize kernel module if boot_setup key is
     passed. See zram_setup() for the hash keys/values. The following example
     setup zram kernel module.
@@ -246,47 +246,47 @@ def zram_setup(device, **KARGS):
 
 class Tmpdir():
     def __init__(self, **KARGS):
-        tmpdir_keys = ['prefix', list(TMPDIR.keys())]
-        zram_keys   = ['device', list(ZRAM.keys())]
-        for (key, value) in list(KARGS):
-            self.__setattr__(self, key, value)
+        for attr in KARGS.keys():
+            self.__setattr__(attr, KARGS[attr])
 
     def __delattr__(self, attr):
-        if attr in list(self._data.keys()):
-            del self._data[attr]
+        if attr in list(self.__dict__.keys()):
+            del self.__dict__[attr]
 
     def __eq__(self, other):
-        sa = set(list(self._data.keys()))
-        sb = set(list(other._data.keys()))
+        sa = set(list(self.__dict__.keys()))
+        sb = set(list(other.__dict__.keys()))
         if sa != sb: return False
         for key in sa:
-            if self._data[key] != other._data[key]: return False
+            if self.__dict__[key] != other.__dict__[key]: return False
         return True
 
     def __getattr__(self, attr):
-        if attr in list(self._data.keys()):
-            return self._data[attr]
-        else: return None
+        return self.get(attr, None)
 
     def __iter__(self):
-        for key in self._data:
-            yield (key, self._data[key])
+        for key in self.__dict__.keys():
+            yield (key, self.__dict__[key])
 
     def __len__(self):
-        return len(list(self._data.keys()))
+        return len(list(self.__dict__.keys()))
 
     def __repr__(self):
-        print(self._data)
+        string = ""
+        for key in self.__dict__.keys():
+            string += "{0} => {1} ".format(key, self.__dict__[key])
+        return string
 
     def __setattr__(self, attr, value):
-        if attr in set([list(TMPDIR.keys()), list(ZRAM.keys()), 'prefix', 'device']):
-            self._data[attr] = value
+        KEYS = ['prefix', 'device']+list(TMPDIR.keys())+list(ZRAM.keys())
+        if attr in set(KEYS):
+            self.__dict__[attr] = value
 
     def setup(self, **KARGS):
-        for key, value in list(KARGS):
-            self.__setattr__(key, value)
-        if self.__getattr__(self, 'device'):   zram_setup(**self._data)
-        if self.__getattr__(self, 'prefix'): tmpdir_setup(**self._data)
+        for attr in KARGS.keys():
+            self.__setattr__(attr, KARGS[attr])
+        if self.get('device', ''):   zram_setup(**self.__dict__)
+        if self.get('prefix', ''): tmpdir_setup(**self.__dict__)
 
 #
 # vim:fenc=utf-8:ci:pi:sts=4:sw=4:ts=4:expandtab
