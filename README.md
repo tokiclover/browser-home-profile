@@ -117,11 +117,11 @@ INSTALLATION
 
 ### Shell scripts
 
-`make DESTDIR=/tmp PREFIX=/usr/local install` would suffice.
+`make -f makefile DESTDIR=/tmp PREFIX=/usr/local install` would suffice.
 
 ### Perl scripts
 
-`perl Makefile.PL; make -f Makefile_PL install DESTDIR=/tmp INSTALLDIRS=vendor`
+`perl Makefile.PL; make install DESTDIR=/tmp INSTALLDIRS=vendor`
 would suffice.
 
 ### Python scripts
