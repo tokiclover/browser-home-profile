@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name = "tmpdir",
-    version = "4.0",
+    version = "1.2",
     packages = ['tmpdir'],
     scripts = ['bhp.py', 'tmpdirs.py'],
 
