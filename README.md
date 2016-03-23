@@ -121,7 +121,7 @@ INSTALLATION
 
 ### Perl scripts
 
-`perl Makefile.PL; make install DESTDIR=/tmp INSTALLDIRS=vendor`
+`perl Makefile.PL; make -f Makefile install DESTDIR=/tmp INSTALLDIRS=vendor INSTALLMAN3DIR=none`
 would suffice.
 
 ### Python scripts
