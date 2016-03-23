@@ -41,7 +41,7 @@ if not len(sys.argv) > 1:
     sys.exit(0)
 
 shortopts = 'bC:c:hs:T:t:p:vz:'
-longopts  = ['boot', '--tmpdir-compressor=', '--zram-compressor=', '--zram-stream=',
+longopts  = ['--boot', '--tmpdir-compressor=', '--zram-compressor=', '--zram-stream=',
         '--tmpdir-prefix=', '--tmpdir-saved=', '--tmpdir-unsaved=', '--help',
         '--version', '--zram-num-dev=']
 
@@ -72,9 +72,9 @@ for (opt, arg) in OPTS:
     if opt in ['-p', '--tmpdir-prefix']:
         tmpdir_ARGS['prefix'] = arg
     if opt in ['-t', '--tmpdir-saved']:
-        tmpdir_ARGS['saved'] = arg
+        tmpdir_ARGS['saved'] = arg.split(',')
     if opt in ['-T', '--tmpdir-unsaved']:
-        tmpdir_ARGS['unsaved'] = arg
+        tmpdir_ARGS['unsaved'] = arg.split(',')
 
 for arg in ARGS:
     tmpdir.zram_setup(device=arg, **zram_ARGS)
