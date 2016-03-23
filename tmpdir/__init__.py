@@ -78,7 +78,7 @@ def tmpdir_init(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
     tmpdir.tmpdir_init(compressor="lz4 -1", saved=["/var/log"])"""
 
     extension = compressor.split()[0]
-    for dir in saved.split(','):
+    for dir in saved:
         if os.path.isfile("%s.%s" % (dir, extension)):
             continue
         if os.path.isdir(dir):
@@ -262,14 +262,16 @@ class Tmpdir():
         return True
 
     def __getattr__(self, attr):
-        return self.get(attr, None)
+        if attr in list(self.__dict__.keys()):
+            return self.__dict__[attr]
+        else: return None
 
     def __iter__(self):
         for key in self.__dict__.keys():
             yield (key, self.__dict__[key])
 
     def __len__(self):
-        return len(list(self.__dict__.keys()))
+        return len(self.__dict__)
 
     def __repr__(self):
         string = ""
@@ -285,8 +287,8 @@ class Tmpdir():
     def setup(self, **KARGS):
         for attr in KARGS.keys():
             self.__setattr__(attr, KARGS[attr])
-        if self.get('device', ''):   zram_setup(**self.__dict__)
-        if self.get('prefix', ''): tmpdir_setup(**self.__dict__)
+        if getattr(self, 'device', ''):   zram_setup(**self.__dict__)
+        if getattr(self, 'prefix', ''): tmpdir_setup(**self.__dict__)
 
 #
 # vim:fenc=utf-8:ci:pi:sts=4:sw=4:ts=4:expandtab
