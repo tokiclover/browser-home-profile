@@ -20,7 +20,7 @@ to '/var/tmp' for a temporary setup (tmpfs).
                   prefix="/var/tmp") # Setup a temporary directory hierarchy
 
 This package manage temporary directory (hierarchy) build on top of a collection
-of helpers and utilities divided in several export tags.
+of helpers and utilities divided in several files.
 
 Temporary directory can be pretty plain by using only 'prefix' key/value pair
 to get a plain tmpfs mounted directory. And then, building a hierarchy of
@@ -38,11 +38,11 @@ Extra space efficiency can be atained by using zram which can be stacked with
 this type of usage.
 """
 
-from tmpdir.functions import pr_begin, pr_die, pr_end, pr_info, pr_warn, mount_info, yesno
+from .functions import pr_begin, pr_die, pr_end, pr_info, pr_warn, mount_info, yesno
 import os, os.path, sys
 
 __author__ = "tokiclover <tokiclover@gmail.com>"
-__date__ = "2016/03/18"
+__date__ = "2016/03/20"
 __version__ = "1.2"
 
 TMPDIR = dict(compressor='lz4 -1', size='10%')
@@ -75,7 +75,7 @@ def tmpdir_init(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
         saved=None, **KARGS):
     """Intialize a temporary directory hierarchy by mounting the prefix directory.
 
-    tmpdir.tmpdir_init(compressor="lz4 -1", saved=["/var/log"])"""
+    tmpdir_init(prefix="/var/tmp", compressor="lz4 -1", saved=["/var/log"])"""
 
     extension = compressor.split()[0]
     for dir in saved:
@@ -94,7 +94,7 @@ def tmpdir_setup(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
     """Setup a temporary directory hierarchy with optional tarball archives for entries
     requiring state retention.
 
-    tmpdir.tmpdir_setup(prefix="/var/test", compressor="lzop -1")"""
+    tmpdir_setup(prefix="/var/test", compressor="lzop -1")"""
 
     if tmpdir_init(prefix=prefix, compressor=compressor, size=size, saved=saved,
                    unsaved=unsaved):
@@ -168,7 +168,7 @@ def zram_init(boot_setup=ZRAM['boot_setup'], num_dev=ZRAM['num_dev'], **KARGS):
     passed. See zram_setup() for the hash keys/values. The following example
     setup zram kernel module.
 
-    tmpdir.zram_init(num_dev=8, boot_setup=1)""" 
+    zram_init(num_dev=8, boot_setup=1)"""
 
     if os.path.exists('/dev/zram0'):
         if not boot_setup: return 0
@@ -245,11 +245,25 @@ def zram_setup(device, **KARGS):
 
 
 class Tmpdir():
+    """Class methods build on top of {tmpdir,zram}_<FUNCTIONS> instead of functions
+    calls.
+
+    swp = Tmpdir(device="1G swap")  # To create a 1GB swap device object (ZRAM)
+    swp.setup()
+
+    tmp = Tmpdir(prefix="/var/tmp") # To create temporary directory hierarchy object (tmpfs)
+    tmp.setup(size="2G")
+    """
+
     def __init__(self, **KARGS):
         for attr in KARGS.keys():
-            self.__setattr__(attr, KARGS[attr])
+            self.setattr(attr, KARGS[attr])
 
-    def __delattr__(self, attr):
+    def __contains__(self, attr):
+        if getattr(self, attr): return True
+        else: return False
+
+    def delattr(self, attr):
         if attr in list(self.__dict__.keys()):
             del self.__dict__[attr]
 
@@ -285,6 +299,8 @@ class Tmpdir():
             self.__dict__[attr] = value
 
     def setup(self, **KARGS):
+        """Setup method build on top of tmpdir_setup() and zram_setup() functions,
+        so, passing extra arguments is totally permissible when setting up the device."""
         for attr in KARGS.keys():
             self.__setattr__(attr, KARGS[attr])
         if getattr(self, 'device', ''):   zram_setup(**self.__dict__)
