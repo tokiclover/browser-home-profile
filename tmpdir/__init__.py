@@ -275,25 +275,24 @@ class Tmpdir():
             if self.__dict__[key] != other.__dict__[key]: return False
         return True
 
-    def __getattr__(self, attr):
+    def getattr(self, attr):
         if attr in list(self.__dict__.keys()):
             return self.__dict__[attr]
         else: return None
 
     def __iter__(self):
-        for key in self.__dict__.keys():
-            yield (key, self.__dict__[key])
+        return ((attr, self.__dict__[attr]) for attr in self.__dict__)
 
     def __len__(self):
         return len(self.__dict__)
 
     def __repr__(self):
-        string = ""
+        string = self.__class__.__name__ + ': '
         for key in self.__dict__.keys():
-            string += "{0} => {1} ".format(key, self.__dict__[key])
+            string += "{0}={1}, ".format(key, self.__dict__[key])
         return string
 
-    def __setattr__(self, attr, value):
+    def setattr(self, attr, value):
         KEYS = ['prefix', 'device']+list(TMPDIR.keys())+list(ZRAM.keys())
         if attr in set(KEYS):
             self.__dict__[attr] = value
