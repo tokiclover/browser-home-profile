@@ -77,7 +77,7 @@ sub pr_error {
 	$PRINT_INFO{len} = length($msg)+length($NAME)+2;
 
 	$pfx = "$COLOR{'fg-magenta'}${NAME}:$COLOR{reset}" if defined($NAME);
-	print STDERR "$PRINT_INFO{eol}$COLOR{'fg-red'}*$COLOR{reset} $pfx $msg\n";
+	print STDERR "$PRINT_INFO{eol}$COLOR{'fg-red'}:ERROR:$COLOR{reset} $pfx $msg\n";
 }
 
 =head2 pr_die(err, str)
@@ -107,7 +107,7 @@ sub pr_info {
 	$PRINT_INFO{len} = length($msg)+length($NAME)+2;
 
 	$pfx = "$COLOR{'fg-yellow'}${NAME}:$COLOR{reset}" if defined($NAME);
-	print "$PRINT_INFO{eol}$COLOR{'fg-blue'}*$COLOR{reset} $pfx $msg\n";
+	print "$PRINT_INFO{eol}$COLOR{'fg-blue'}INFO:$COLOR{reset} $pfx $msg\n";
 }
 
 =head2 pr_warn(str)
@@ -123,7 +123,7 @@ sub pr_warn {
 	$PRINT_INFO{len} = length($msg)+length($NAME)+2;
 
 	$pfx = "$COLOR{'fg-red'}${NAME}:$COLOR{reset}" if defined($NAME);
-	print STDOUT "$PRINT_INFO{eol}$COLOR{'fg-yellow'}*$COLOR{reset} $pfx $msg\n";
+	print STDOUT "$PRINT_INFO{eol}$COLOR{'fg-yellow'}WARN:$COLOR{reset} $pfx $msg\n";
 }
 
 =head2 pr_begin(str)
