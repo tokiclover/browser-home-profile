@@ -33,7 +33,7 @@ pr_error()
 	local msg="${*}"
 	PRINT_LEN=$((${#NAME}+3+${#msg}))
 	local PFX="${NAME:+${COLOR_MAG}${NAME}:${COLOR_RST}}"
-	echo -e "${PRINT_EOL}${COLOR_RED}*${COLOR_RST} ${PFX} ${@}" >&2
+	echo -e "${PRINT_EOL}${COLOR_RED}ERROR:${COLOR_RST} ${PFX} ${@}" >&2
 }
 
 #
@@ -52,7 +52,7 @@ pr_info()
 	local msg="${*}"
 	PRINT_LEN=$((${#NAME}+3+${#msg}))
 	local PFX="${NAME:+${COLOR_YLW}${NAME}:${COLOR_RST}}"
-	echo -e "${PRINT_EOL}${COLOR_BLU}*${COLOR_RST} ${PFX} ${@}"
+	echo -e "${PRINT_EOL}${COLOR_BLU}INFO:${COLOR_RST} ${PFX} ${@}"
 }
 
 #
@@ -63,7 +63,7 @@ pr_warn()
 	local msg="${*}"
 	PRINT_LEN=$((${#NAME}+3+${#msg}))
 	local PFX="${NAME:+${COLOR_RED}${NAME}:${COLOR_RST}}"
-	echo -e "${PRINT_EOL}${COLOR_YLW}*${COLOR_RST} ${PFX} ${@}"
+	echo -e "${PRINT_EOL}${COLOR_YLW}WARN:${COLOR_RST} ${PFX} ${@}"
 }
 
 #
@@ -121,16 +121,12 @@ eval_colors()
 
 	for clr in 0:BLK 1:RED 2:GRN 3:YLW 4:BLU 5:MAG 6:CYN 7:WHT; do
 		eval COLOR_${clr#*:}="'${ESC}${FGD}${clr%:*}m'"
+		eval COLOR_BG_${color#*:}="'${ESC}${BGD}${color%:*}m'"
 	done
 	COLOR_RST="${ESC}0m"
 	COLOR_BLD="${ESC}1m"
 	COLOR_UND="${ESC}4m"
 	COLOR_ITA="${ESC}3m"
-	if [ "${1}" = 8 ]; then
-		for clr in 0:BLK 1:RED 2:GRN 3:YLW 4:BLU 5:MAG 6:CYN 7:WHT; do
-			eval COLOR_BG_${clr#*:}="'${ESC}${BGD}${clr%:*}m'"
-		done
-	fi
 	if [ "${1}" = 256 ]; then
 		for i in seq 0 255; do
 			eval BG_${i}="'${ESC}${BGD}${i}m'"
