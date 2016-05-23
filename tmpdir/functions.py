@@ -38,7 +38,7 @@ def pr_error(msg):
         pfx = ' %s%s:%s' % (COLOR['fg-magenta'], NAME, COLOR['reset'])
     else:
         pfx = ''
-    print('%s%s*%s %s %s' % (PRINT_INFO['eol'], COLOR['fg-red'], COLOR['reset'],
+    print('%s%sERROR:%s %s %s' % (PRINT_INFO['eol'], COLOR['fg-red'], COLOR['reset'],
           pfx, msg), file=sys.stderr)
 
 def pr_die(ret, msg):
@@ -56,7 +56,7 @@ def pr_info(msg):
         pfx = ' %s%s:%s' % (COLOR['fg-yellow'], NAME, COLOR['reset'])
     else:
         pfx = ''
-    print('%s%s*%s %s %s' % (PRINT_INFO['eol'], COLOR['fg-blue'], COLOR['reset'],
+    print('%s%sINFO:%s %s %s' % (PRINT_INFO['eol'], COLOR['fg-blue'], COLOR['reset'],
           pfx, msg), file=sys.stdout)
 
 def pr_warn(msg):
@@ -68,7 +68,7 @@ def pr_warn(msg):
         pfx = ' %s%s:%s' % (COLOR['fg-red'], NAME, COLOR['reset'])
     else:
         pfx = ''
-    print('%s%s*%s %s %s' % (PRINT_INFO['eol'], COLOR['fg-yellow'], COLOR['reset'], pfx, msg),
+    print('%s%sWARN:%s %s %s' % (PRINT_INFO['eol'], COLOR['fg-yellow'], COLOR['reset'], pfx, msg),
                 file=sys.stdout)
 
 def pr_begin(msg):
