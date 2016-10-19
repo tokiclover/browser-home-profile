@@ -220,8 +220,6 @@ if __name__ == '__main__':
             TMPDIR = arg
         if opt in ['-d', '--daemon=']:
             bhp_info['daemon'] = arg
-        if opt in ['-C', '--noCOLOR']:
-            PRINT_INFO['COLOR'] = 0
 
     #
     # Finally, launch the setup helper
