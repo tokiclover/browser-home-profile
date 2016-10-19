@@ -184,7 +184,7 @@ bhp_init_profile()
 	for dir in "${HOME}"/.${BHP_PROFILE} "${HOME}"/.cache/${BHP_PROFILE#config/}; do
 		[ -d "${dir}" ] || continue
 		if mount_info "${dir}"; then
-			${SET_TARBALL} && bhp ${dir}
+			${SET_TARBALL} && bhp "${dir}"
 			continue
 		fi
 		OLD="${PWD}"
@@ -206,7 +206,7 @@ bhp_init_profile()
 		pr_end "${?}"
 
 		if ${SET_TARBALL}; then
-			bhp ${dir}
+			bhp "${dir}"
 		fi
 		cd "${OLD}"
 	done
