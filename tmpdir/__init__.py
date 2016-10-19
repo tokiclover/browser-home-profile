@@ -72,7 +72,7 @@ def read_or_write(file, mode='r', *PARGS):
 
 #------------------------------------------------------ TMPDIR FUNCTIONS
 def tmpdir_init(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
-        saved=None, **KARGS):
+        saved=list([]), **KARGS):
     """Intialize a temporary directory hierarchy by mounting the prefix directory.
 
     tmpdir_init(prefix="/var/tmp", compressor="lz4 -1", saved=["/var/log"])"""
@@ -90,7 +90,7 @@ def tmpdir_init(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
                size, prefix))
 
 def tmpdir_setup(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
-        saved=None, unsaved=None):
+        saved=list([]), unsaved=list([])):
     """Setup a temporary directory hierarchy with optional tarball archives for entries
     requiring state retention.
 
@@ -99,19 +99,18 @@ def tmpdir_setup(prefix, compressor=TMPDIR['compressor'], size=TMPDIR['size'],
     if tmpdir_init(prefix=prefix, compressor=compressor, size=size, saved=saved,
                    unsaved=unsaved):
         return 1
-    if not saved or not unsaved: return 0
 
-    for dir in (saved, unsaved):
-        DIR = "%s/%s".format(prefix, dir)
+    for dir in saved+unsaved:
+        DIR = "{0}/{1}".format(prefix, dir.replace('/', ':'))
         if os.path.ismount(DIR):
             continue
         if not os.path.isdir(DIR):
-            os.mkdir(DIR, mode=755)
+            os.mkdir(DIR)
         pr_begin("Mounting %s" % DIR)
         ret = os.system("mount --bind {0} {1}".format(DIR, dir))
         pr_end(ret)
 
-    if saved:
+    if len(saved):
         tmpdir_restore(saved, compressor=compressor)
 
 def tmpdir_restore(compressor=TMPDIR['compressor'], *PARGS):
@@ -264,7 +263,7 @@ class Tmpdir():
         else: return False
 
     def delattr(self, attr):
-        if attr in list(self.__dict__.keys()):
+        if attr in self.__dict__:
             del self.__dict__[attr]
 
     def __eq__(self, other):
@@ -290,7 +289,7 @@ class Tmpdir():
         string = self.__class__.__name__ + ': '
         for key in self.__dict__.keys():
             string += "{0}={1}, ".format(key, self.__dict__[key])
-        return string
+        return '<' + string + '>'
 
     def setattr(self, attr, value):
         KEYS = ['prefix', 'device']+list(TMPDIR.keys())+list(ZRAM.keys())
