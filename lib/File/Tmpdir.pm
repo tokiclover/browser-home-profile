@@ -144,8 +144,11 @@ sub tmpdir_setup {
 	my @DIRS = @{$ARGS{saved}} if exists $ARGS{saved};
 	push @DIRS, @{$ARGS{unsaved}} if exists $ARGS{unsaved};
 
+	my $d;
 	for my $dir (@DIRS) {
-		my $DIR = "$ARGS{prefix}/$dir";
+		$d = $dir;
+		$d =~ s/\//:/g;
+		my $DIR = "$ARGS{prefix}/$d";
 		next if (mount_info($DIR));
 		mkdir $DIR unless (-d $DIR);
 		pr_begin("Mounting $DIR");
