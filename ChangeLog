@@ -1,5 +1,9 @@
 Header: browser-home-profile/ChangeLog, 2015/04/24
 
+4.1:
+
+Fix temporary directory creation (-p option support);
+
 4.0:
 
 Added tmpdirs.{sh,py,pl} (Temporary directory setup with ZRAM support);
